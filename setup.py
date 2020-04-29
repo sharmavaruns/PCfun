@@ -1,72 +1,44 @@
-# !/usr/bin/env python3
-
+"""Install package."""
+import os
 from setuptools import setup, find_packages
 
+REQUIREMENTS = []
+if os.path.exists('requirements.txt'):
+    for line in open('requirements.txt'):
+        REQUIREMENTS.append(line.strip())
 
-long_description = 'PCfun is a hybrid supervised and unsupervised machine learning/text mining framework for the functional annotation of protein complex queries, created using a fastText word embedding built upon 1 million open access articles in PubMed Central.'
-
-setup_args = dict(
-    name='PCfun',
-    version='0.0.1',
-    packages=find_packages(),
-    scripts=[
-#        'collapse.py',
-#        'differential.py',
-#        'exceptions.py',
-#        'generate_features.py',
-#        'go_fdr.py',
-#        'io_.py',
-#        'hypothesis.py',
-#        'mcl.py',
-#        'init.py'
-#        'map_to_database.py',
-#        'mcl.py',
-#        'merge.py',
-#        'parse_GO.py',
-#        'main.py',
-#        'plots.py',
-#        'predict.py',
-#        'stats_.py',
-#        'validate_input.py',
-    ],
-    # long_description=long_description,
-    license='BSD',
-    # Project uses reStructuredText, so ensure that the docutils get
-    # installed or upgraded on the target machine
-    install_requires=['Cython','fastText','scipy>=1.1', 'pandas', 'sklearn', 'networkX'],
-    package_data={
-        'PCfun': [##TBD
-        #'go_term_class.txt', 'go-basic.obo', 'rf_equal.clf'],
-    },
-    # metadata to display on PyPI
-    author='Varun Sharma',
-    author_email='varunsharma.us@gmail.com',
-    description='Text-mining/machine learning prediction tool for the functional annotation of protein complex queries.',
-    keywords=['proteomics', 'machine-learning', 'text-mining','protein complexes'],
-    url='https://github.com/sharmavaruns/PCfun/',
-    project_urls={
-        'Bug Tracker': 'https://github.com/sharmavaruns/PCfun',
-        'Documentation': 'https://github.com/sharmavaruns/PCfun',
-        'Source Code': 'https://github.com/fossatiA/PCProphet/',
-    },
-    platforms="Linux, Mac OS X, Windows",
-    long_description=long_description,
-    classifiers=[
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Modified BSD License',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7'
-    ]
+DESCRIPTION = (
+    'PCfun, a hybrid supervised and unsupervised machine learning/text mining '
+    'framework for the functional annotation of protein complex queries'
 )
-# TODO add compilation for Java GUI
 
+if os.path.exists('README.md'):
+    LONG_DESCRIPTION = open('README.md').read()
+else:
+    LONG_DESCRIPTION = DESCRIPTION
 
-def main():
-    setup(**setup_args)
+scripts = ['bin/pcfun']
 
-
-if __name__ == '__main__':
-    main()
+setup(
+    name='pcfun',
+    version='0.0.1',
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
+    author='Varun Sharma, Matteo Manica, Chen Li',
+    author_email=(
+        'varunsharma.us@gmail.com, tte@zurich.ibm.com, chen.li@monash.edu'
+    ),
+    packages=find_packages('.'),
+    install_requires=REQUIREMENTS,
+    long_description_content_type='text/markdown',
+    license='MIT',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ],
+    scripts=scripts
+)

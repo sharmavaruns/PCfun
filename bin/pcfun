@@ -1,0 +1,8 @@
+# !/usr/bin/env python3
+"""PCFun executable scipt."""
+
+# NOTE: here we should put the main command line script.
+
+
+if __name__ == '__main__':
+    pass
