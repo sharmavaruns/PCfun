@@ -1,0 +1,47 @@
+### WORKFLOW
+
+Inputs:
+1) Protein complex queries: file with 'PC Name'\t'Subunit_UniProt1,Subunit_UniProt2,Subunit_UniProtN'
+2) UniProt to GeneName map
+3) Path to word embedding
+4) Path to trained ML Models
+5) Input GO Terms, .obo file
+6) Path to KDTree files
+7) path to CORUM file
+8) Built command line version of fasttext
+
+Outputs:
+1) Folder structure with
+    - PC query:
+        a) Functionally Enriched terms and their tree pictures
+        b) ML results
+        c) KDTree results
+     
+     
+     
+Scripts:
+1) Parse_tsv_to_vecs.py: ## Module of functions
+Input: tsv with first column corresponding to original Protein complex name and second
+with Uniprot subunits
+Arguments:
+- "--complex_name" (Bool)
+- "--UniProt_name" (Bool)
+Output: text processed names and corresponding dictionary with word vectors
+
+
+2) kdtree_nns.py
+Input: word vectors output from 'Parse_tsv_to_vecs.py'
+Arguments:
+- "--GO" all (default: all, optionally can choose single with specific GO name: MF, BP, or CC)
+- "--tree_path" /path/to/custom/tree.pickle (Optional if one has created custom kd_tree- make_trees functionality)
+Output: KDTree results organized as dictionaries of pd.DataFrames
+[Should probably have accompanying write_out function (maybe make this into a class)]
+
+3) supervised_results.py
+Input: word vectors output from 'Parse_tsv_to_vecs.py'
+Arguments:
+- "--GO" all (default: all, optionally can choose single with specific GO name: MF, BP, or CC)
+Output: Supervised results organized as dictionaries of pd.DataFrames
+[Should probably have accompanying write_out function (maybe make this into a class)]
+
+4) functional_enrichment.py
