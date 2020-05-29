@@ -15,4 +15,4 @@ superv_cmplname_fmodels_path = os.path.join(req_input_path,'PC_GO_w_complex','fu
 trees_path = os.path.join(req_input_path,'Trees_NNs')
 additional_trees = os.path.join(trees_path,'additional_trees')
 custom_trees = os.path.join(trees_path,'customTrees')
-
+go_obo_path = os.path.join(req_input_path,'go-basic.obo')

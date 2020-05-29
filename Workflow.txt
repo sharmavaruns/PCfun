@@ -20,12 +20,14 @@ Outputs:
      
      
 Scripts:
-1) Parse_tsv_to_vecs.py: ## Module of functions
+1) mapping.py: ## Module of functions- NOT A CALLABLE SCRIPT WITH I/O
 Input: tsv with first column corresponding to original Protein complex name and second
-with Uniprot subunits
+second with pre-recorded Gene Names, and optional third with Uniprot subunits, and
 Arguments:
-- "--complex_name" (Bool)
-- "--UniProt_name" (Bool)
+- "--Complex_name" (Bool)
+- "--Gene_name" (Bool, optional)
+- "--UniProt_ids" (Bool)
+
 Output: text processed names and corresponding dictionary with word vectors
 
 
@@ -37,7 +39,7 @@ Arguments:
 Output: KDTree results organized as dictionaries of pd.DataFrames
 [Should probably have accompanying write_out function (maybe make this into a class)]
 
-3) supervised_results.py
+3) supervised_rf_results.py
 Input: word vectors output from 'Parse_tsv_to_vecs.py'
 Arguments:
 - "--GO" all (default: all, optionally can choose single with specific GO name: MF, BP, or CC)
@@ -45,3 +47,21 @@ Output: Supervised results organized as dictionaries of pd.DataFrames
 [Should probably have accompanying write_out function (maybe make this into a class)]
 
 4) functional_enrichment.py
+Input: outputs of supervised_results.py and kdtree_nns.py
+Output: Directories with subdirectory structure of:
+    - PC
+        - BP
+            - supervised results
+            - KDTree results (top 200)
+            - functional enrichment table
+            - Tree Diagrams (dir)
+        - MF
+            - supervised results
+            - KDTree results (top 200)
+            - functional enrichment table
+            - Tree Diagrams (dir)
+        - CC
+            - supervised results
+            - KDTree results (top 200)
+            - functional enrichment table
+            - Tree Diagrams (dir)
