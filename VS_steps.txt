@@ -12,3 +12,5 @@
     ## However, I haven't figured out how to properly use the setup.py script yet
     ## This seems to have installed the dependencies I want atm. But still confused in regards to fasttext
 8)
+
+### Somehow I need to not include this
