@@ -1,6 +1,11 @@
 # !/usr/bin/env python3
 """PCFun executable scipt."""
 
+## dependencies
+from pcfun.core import preprocess
+from pcfun.mapping import ftxt_model
+import pandas as pd
+
 # NOTE: here we should put the main command line script.
 
 

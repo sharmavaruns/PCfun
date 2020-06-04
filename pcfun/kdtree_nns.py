@@ -1,5 +1,6 @@
 import pandas as pd
 from interact.nn_tree import NearestNeighborsTree
+from pcfun.core import preprocess
 
 
 def readin_multiquery_file(query_list_filepath, zip_together=True):
@@ -93,8 +94,9 @@ def query_tree_get_mqueries_nns(query_vecs_input ,trees_dict ,tree_type_list ,k_
                 k_nn = len(trees_dict[allowed_tree_types[tree_type]].word_series)
             else:
                 k_nn = k_nns
-            tmp_nn_list = trees_dict[allowed_tree_types[tree_type]].kneighbors \
-                (X=query_vecs_input.loc[tree_type_queries],k=k_nn)
+            tmp_nn_list = trees_dict[allowed_tree_types[tree_type]].kneighbors(
+                X=query_vecs_input.loc[tree_type_queries],k=k_nn,return_similarity=True
+            )
             for i ,key in enumerate(list(tree_type_queries)):
                 final_df = pd.DataFrame(list(zip(tmp_nn_list[0][i],
                                                  tmp_nn_list[2][i],

@@ -15,10 +15,30 @@ from pcfun.core import preprocess
 
 
 class ftxt_model():
-    def __init__(self, path_to_fasttext_model: str):
-        self.model = fasttext.load_model(path_to_fasttext_model)
+    def __init__(self, path_to_fasttext_embedding: str):
+        self.model = fasttext.load_model(path_to_fasttext_embedding)
         self.supp_tax_ids = [9606, 3702, 6239]  ## Should make this modular to look up ftp link and extract tax_ids
         print('Model should be loaded')
+
+    def queries_df_to_vecs(self,input_df):
+        if isinstance(input_df,list):
+            input_df = pd.DataFrame(input_df)
+        if input_df.shape[1] != 1:
+            raise ValueError(
+                f'Expected input pd.DataFrame to have single column with no header of natural language queries'
+                f'Can also input a list of queries that will be coerced into a pd.DataFrame'
+            )
+        ## Preprocess strings
+        input_df[0] = input_df[0].apply(lambda x: preprocess(str(x)))
+        ## drop duplicates
+        input_df = input_df.drop_duplicates(keep='first')
+        ## get embedding sentence vectors for queries
+        vecs_df = pd.DataFrame(list(input_df[0].apply(self.model.get_sentence_vector)), index=input_df[0])
+        ## L2 normalize vectors
+        vec_norm = np.sqrt(np.square(np.array(vecs_df)).sum(axis=1))
+        queries_vec_normalized = pd.DataFrame(np.array(vecs_df) / vec_norm.reshape(vecs_df.shape[0], 1),
+                                              index=vecs_df.index)
+        return(queries_vec_normalized)
 
     def tsv_to_vecs(self, path_to_tsv: str, is_UniProt=False, write_vecs=True, **kwargs):
         '''
@@ -68,24 +88,45 @@ class ftxt_model():
                 )
 
             raise ValueError(f'UniProt ID mapping to GeneName not yet implemented')
-
-        input_df[0] = input_df[0].apply(lambda x: preprocess(str(x)))
-        input_df = input_df.drop_duplicates(keep='first')
-        vecs_df = pd.DataFrame(list(input_df[0].apply(self.model.get_sentence_vector)), index=input_df[0])
-        ## L2 normalize vectors
-        vec_norm = np.sqrt(np.square(np.array(vecs_df)).sum(axis=1))
-        queries_vec_normalized = pd.DataFrame(np.array(vecs_df) / vec_norm.reshape(vecs_df.shape[0], 1),
-                                              index=vecs_df.index)
+        queries_vec_normalized = self.queries_df_to_vecs(input_df=input_df)
         if write_vecs:
             queries_vec_normalized.to_csv(
                 os.path.join(os.path.dirname(path_to_tsv), 'vecs.tsv'),
                 sep='\t', header=True, index=True
             )
         return (queries_vec_normalized)
-
+    def uniprot_to_genename_map(self,taxon_id: int):
+        map_uni_gn_pn_spec = []
+        with open(os.path.join(uniprot_path, 'uniprot_taxo=9606_human_20191112.fasta'), 'r') as f:
+            for i, line in enumerate(f):
+                if '>' in line:
+                    split_line = line.split('|')
+                    uni = split_line[1]
+                    try:
+                        try:
+                            gn = re.search(r'(?<=GN=)(.*?)(?= )', split_line[2]).group()
+                        except AttributeError:
+                            gn = 'uncharacterized'
+                        try:
+                            protname = re.search(r'(?<= )(.*?)(?= OS)', split_line[2]).group()
+                        except AttributeError:
+                            protname = 'uncharacterized'
+                        try:
+                            species = re.search(r'(?<= OS=)(.*?)(?= OX=)', split_line[2]).group()
+                        except AttributeError:
+                            species = 'uncharacterized'
+                        map_uni_gn_pn_spec.append([i, uni, gn, protname, species])
+                    except:
+                        print('line {} has something missing\n{}'.format(i, line))
+        #             if i > 1000:
+        #                 break
+        map_uni_gn_pn_spec_df = pd.DataFrame(map_uni_gn_pn_spec,
+                                             columns=['idx_in_file', 'Uniprot', 'GeneName', 'ProtName', 'Species'])
+        # map_uni_gn_pn_spec_df.to_csv(os.path.join(uniprot_path,'taxo=9606__human__uni_gn_pn_spec'),sep='\t')
+        map_uni_gn_pn_spec_df
 
 ### Example Usage (Will be moved to main.py script when ready)
-fasttext_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
-input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
-abstr_model = ftxt_model(path_to_fasttext_model=fasttext_path)
-test_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True)
+# fasttext_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
+# input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
+# abstr_model = ftxt_model(path_to_fasttext_embedding=fasttext_path)
+# test_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True)

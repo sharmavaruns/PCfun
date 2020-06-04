@@ -4,6 +4,10 @@ import networkx as nx
 import itertools
 import pygraphviz as pgv
 import matplotlib
+from goatools import obo_parser
+from pcfun.core import preprocess
+from pcfun.mapping import ftxt_model
+import pandas as pd
 
 
 def go_graph_topchildren(go_dag, parent_term, recs, mapped_success_top10, nodecolor,
@@ -52,17 +56,17 @@ def go_graph_topchildren(go_dag, parent_term, recs, mapped_success_top10, nodeco
     # highlight the query terms
     val_col_map = {}
     for rec in recs:
-        print(rec.name)
+        #print(rec.name)
         try:
             if rec in recs_oi:
                 if rec.name == go_dag[parent_term].name:
                     val_col_map[rec.name] = matplotlib.colors.rgb2hex('plum')
-                    print('parent term: {}'.format(rec.id, rec.name), val_col_map[rec.name])
+                    #print('parent term: {}'.format(rec.id, rec.name), val_col_map[rec.name])
                     node = grph.get_node(go_dag.label_wrap(rec.item_id))
                     node.attr.update(fillcolor=val_col_map[rec.name])
 
                 else:
-                    print(rec.id, rec.name)
+                    #print(rec.id, rec.name)
                     # val_map[rec] = np.random.uniform(0,1)
                     # value = val_map.get(rec, recs_oi_dict[rec])
                     value = recs_oi_dict[rec]
@@ -72,7 +76,7 @@ def go_graph_topchildren(go_dag, parent_term, recs, mapped_success_top10, nodeco
                     node.attr.update(fillcolor=val_col_map[rec.name])
             elif rec.name == go_dag[parent_term].name:
                 val_col_map[rec.name] = matplotlib.colors.rgb2hex('plum')
-                print('parent term: {}'.format(rec.id, rec.name), val_col_map[rec.name])
+                #print('parent term: {}'.format(rec.id, rec.name), val_col_map[rec.name])
                 node = grph.get_node(go_dag.label_wrap(rec.item_id))
                 node.attr.update(fillcolor=val_col_map[rec.name])
         except:
@@ -414,13 +418,3 @@ def lowest_common_ancestor(terms, go):
 
 
 
-
-##### For example usage of reading in .obo file for getting goatools GO DAG
-##### Note: the following does not use the above commands. Need to clean up unnecessary functioos above
-## read-in go_dag from obo file
-go_dag = obo_parser.GODag(path_obo)
-go_map = pd.DataFrame([(COWS_functions.preprocess(go_dag[go_id].name),go_id,go_dag[go_id].namespace)
-                       for go_id in go_dag.keys()],
-                      columns=['GO','GO ID','class'])
-go_map_dict = {go_map['GO'].iloc[i]: go_map['GO ID'].iloc[i] for i in range(go_map.shape[0])}
-go_map

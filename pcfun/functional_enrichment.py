@@ -1,7 +1,6 @@
 from scipy.stats import hypergeom
-
-
 from pcfun import core
+import numpy as np
 
 
 def functional_enrichment(predterms_dict,  # =mf_dict_predterms
