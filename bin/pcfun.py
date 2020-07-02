@@ -18,16 +18,14 @@ from pcfun.functional_enrichment import functional_enrichment
 
 
 
-
-
-
-
 # NOTE: here we should put the main command line script.
 
 
 if __name__ == '__main__':
     start_entire = time.time()
     is_UniProt = False ## should come from command line flag
+    use_DCA = True
+    n_clusts = 25
     embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
     input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
     req_inputs_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs'
@@ -114,7 +112,28 @@ if __name__ == '__main__':
     print(list(queries_vecs.index)[n_query])
     print(queries_rez[list(queries_vecs.index)[n_query]]['MF_GO']['combined'])
     ############################################################################################################
+    ############################################################################################################
+    ### Pre loading manual GO DAG using networkx in case use_DCA is True
+    ## using manual functions for working with GO DAG tree to calculate Wang SemSim as is not in goatools
+    if use_DCA == True:
+        start = time.time()
+        warnings.warn(
+            f'use_DCA == True. I hope you know what you are doing, DCA takes awhile to run, but does'
+            f' reduce space when plotting tree diagrams for BP_GO.\n'
+        )
+        dcas = go_dag_functionalities.run_dca(
+            path_obo = path_obo,
+            input_dat_path = input_dat_path,
+            go_dag = go_dag,
+            queries_vecs = queries_vecs,
+            queries_rez = queries_rez,
+            go_map = go_map,
+            nclusts=n_clusts
+        )
+        queries_rez, queries_rez_original = dcas.runner()
 
+    end = time.time()
+    print('Time taken for doing Deepest Common Ancestor Clustering: {} min'.format(round((end - start) / 60, 3)))
     ############################################################################################################
     ######################### Getting KDTree nn results for queries
     ## Define the name of the tree variables and therefore there pickled file names
@@ -206,11 +225,10 @@ if __name__ == '__main__':
     end = time.time()
     print('Time taken for writing out results: {} min'.format(round((end - start) / 60, 3)))
     ############################################################################################################
-
     ############################################################################################################
     ######################### Creating GO plots
     start = time.time()
-    tree_diags_plot = ['MF_GO']#'MF_GO','CC_GO'] ##
+    tree_diags_plot = ['BP_GO']#'MF_GO','CC_GO'] ##
 
     for query in list(queries_vecs.index):
         for go_class,iloc_cut in {'BP_GO': 11044, 'MF_GO': 5213,'CC_GO': 1896}.items():
@@ -218,10 +236,18 @@ if __name__ == '__main__':
                 next
             else:
                 if go_class == 'BP_GO':
-                    warnings.warn(
-                        f'I hope you know what you are doing, BP_GO takes forever to run and lots of space!\n'
-                        f'I suggest only plotting "MF_GO" and/or "CC_GO" diagrams as normally not as many created.'
-                    )
+                    if not use_DCA:
+                        warnings.warn(
+                            f'I hope you know what you are doing, BP_GO takes'
+                            f' forever to run and lots of space!\n'
+                            f'I suggest only plotting "MF_GO" and/or "CC_GO" diagrams as normally not as many created.'
+                        )
+                    else:
+                        warnings.warn(
+                            f'Tree Diagram creation for BP_GO may take some time to run,'
+                            f' but it looks like you have used the functional '
+                            f'annotation clustering (use_DCA=True), which should help.'
+                        )
                 for go_id_parent in test_funcenrich_rez[query][go_class].keys():
                     if not go_id_parent == 'dummy':
                         if test_funcenrich_rez[query][go_class][go_id_parent]['isSignif'] == True:

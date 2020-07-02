@@ -1,13 +1,17 @@
+import os
 import requests
 import re
 import networkx as nx
 import itertools
 import pygraphviz as pgv
 import matplotlib
-from goatools import obo_parser
 from pcfun.core import preprocess
-from pcfun.mapping import ftxt_model
+import itertools
 import pandas as pd
+import scipy
+import seaborn as sns
+from scipy.cluster.hierarchy import cophenet
+from scipy.cluster.hierarchy import fcluster
 
 
 def go_graph_topchildren(go_dag, parent_term, recs, mapped_success_top10, nodecolor,
@@ -416,5 +420,110 @@ def lowest_common_ancestor(terms, go):
     # Take the element at maximum depth.
     return min(common_parent_go_ids(terms, go), key=lambda t: go[t].depth)
 
+class run_dca():
+    def __init__(self,
+                 path_obo:str,input_dat_path:str,go_dag,queries_vecs,queries_rez,go_map,nclusts: int = 25):
+        import copy
+        self.path_obo = path_obo
+        self.input_dat_path = input_dat_path
+        self.out_rez_path = os.path.join(os.path.dirname(self.input_dat_path), 'Results')
+        os.makedirs(self.out_rez_path, exist_ok=True)
+        self.go_dag = go_dag
+        self.queries_vecs = queries_vecs
+        self.queries_rez = queries_rez
+        self.queries_rez_orig = copy.deepcopy(self.queries_rez)
+        self.go_map = go_map
+        self.G = from_obo(path_obo)
+        self.nclusts = nclusts
 
 
+    def semsim_squaredf(self,ids_ls,full_tree,go_tree,go_dag):
+        blank_df = pd.DataFrame(columns = ids_ls,index = ids_ls)
+        id_names_zip_dict = {go_id:preprocess(go_dag[go_id].name) for go_id in ids_ls}
+        for x,y in itertools.combinations_with_replacement(ids_ls,2):
+            if not x in full_tree.nodes:
+                x_run = full_tree.alt_ids[x]
+            else:
+                x_run = x
+            if not y in full_tree.nodes:
+                y_run = full_tree.alt_ids[y]
+            else:
+                y_run = y
+            score = wang(go_tree,x_run,y_run)
+            #print(x,y,score)
+            blank_df[y].loc[x] = score
+            blank_df[x].loc[y] = score
+        blank_df = blank_df.rename(columns=id_names_zip_dict,index=id_names_zip_dict)
+        blank_df.columns.name = None
+        blank_df.index.name = None
+        blank_df = blank_df[blank_df.columns].astype(float)
+        return(blank_df,id_names_zip_dict)
+
+    def runner(self):
+        bp_tree = self.G.subgraph(
+            [n for n, v in self.G.nodes(data=True) if v['namespace'] == 'biological_process'])
+        n_clust = self.nclusts
+        for i, query in enumerate(list(self.queries_vecs.index)):  # queries_oi_names[:]):
+            k,id_names_zip_dict = self.semsim_squaredf(
+                list(self.queries_rez[query]['BP_GO']['combined'].index),
+                full_tree=self.G,
+                go_tree=bp_tree,
+                go_dag=self.go_dag
+            )
+            Z = scipy.cluster.hierarchy.linkage(k, method='weighted',
+                                                metric='euclidean')  ## calculate linkages for clusters
+
+            clusters = fcluster(Z, n_clust, criterion='maxclust')
+            clust_lists = []
+            dcas = {}
+            dcas_goids = {}
+            for i in set(clusters):
+                names = list(k.index[clusters == i])
+                # print(names)
+                clust_lists.append(names)
+                go_ids = []
+                for name in names:
+                    go_ids.append(self.go_map['GO ID'][list(self.go_map['GO'] == name).index(True)])
+                dca = deepest_common_ancestor(go_ids, self.go_dag)
+                dcas[str(i)] = preprocess(self.go_dag[dca].name)
+                dcas_goids[preprocess(self.go_dag[dca].name)] = dca
+
+            go_term_clust_map = dict(zip(k.index, list(map(str, clusters))))
+            clusters = \
+                pd.DataFrame((list((k, dcas.get(v, v)) for (k, v) in go_term_clust_map.items()))).set_index(
+                    [0])[1]
+
+            row_colors = sns.color_palette("cubehelix", len(set(clusters)))
+            lut = dict(zip(clusters.unique(), row_colors))
+            clusters.name = None
+
+            dca_clustermap = sns.clustermap(k, cmap='Blues', row_colors=clusters.map(lut), col_cluster=True,
+                                            linewidths=0, xticklabels=False  # yticklabels=True,
+                                            )
+
+            for label in clusters.unique():
+                dca_clustermap.ax_col_dendrogram.bar(0, 0, color=lut[label],
+                                                     label=label, linewidth=0)
+            dca_clustermap.fig.suptitle(query, ha='left', va='center').set_size(16)
+            dca_clustermap.ax_col_dendrogram.legend(loc="lower left", ncol=3).set_title(
+                'deepest common ancestor clusters', 'large')
+            dca_clustermap.ax_col_dendrogram.set_xlim([0, 0])
+            os.makedirs(os.path.join(self.out_rez_path,query),exist_ok=True)
+            dca_clustermap.savefig(os.path.join(self.out_rez_path,query, 'FuncAnnotClust_DCA_plot.png'))
+            ## Write out original ML predicted terms for each PC
+            df_out = self.queries_rez_orig[query]['BP_GO']['combined']
+            if not df_out.shape[0] == 0:
+                df_out.to_csv(
+                    os.path.join(self.out_rez_path,query,'ML_pred_results_before_DCA_func_clustering.tsv'),
+                    sep = '\t'
+                )
+            else:
+                print(query,
+                      'has no ML predicted terms for BP_GO, hence no reason to write out original ML predicted'
+                      ' terms prior to doing functional annotation clustering based on pairwise semantic similarity.'
+                      )
+
+            ## Overwrite DCA GO terms to self.queries_rez
+            self.queries_rez[query]['BP_GO']['combined'] = pd.DataFrame(
+                dcas_goids, index=['GO ID']).T.drop_duplicates()
+        return(self.queries_rez,self.queries_rez_orig)
