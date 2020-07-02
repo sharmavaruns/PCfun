@@ -24,7 +24,7 @@ from pcfun.functional_enrichment import functional_enrichment
 if __name__ == '__main__':
     start_entire = time.time()
     is_UniProt = False ## should come from command line flag
-    use_DCA = True
+    #use_DCA = True
     n_clusts = 25
     embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
     input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
@@ -113,27 +113,27 @@ if __name__ == '__main__':
     print(queries_rez[list(queries_vecs.index)[n_query]]['MF_GO']['combined'])
     ############################################################################################################
     ############################################################################################################
-    ### Pre loading manual GO DAG using networkx in case use_DCA is True
-    ## using manual functions for working with GO DAG tree to calculate Wang SemSim as is not in goatools
-    if use_DCA == True:
-        start = time.time()
-        warnings.warn(
-            f'use_DCA == True. I hope you know what you are doing, DCA takes awhile to run, but does'
-            f' reduce space when plotting tree diagrams for BP_GO.\n'
-        )
-        dcas = go_dag_functionalities.run_dca(
-            path_obo = path_obo,
-            input_dat_path = input_dat_path,
-            go_dag = go_dag,
-            queries_vecs = queries_vecs,
-            queries_rez = queries_rez,
-            go_map = go_map,
-            nclusts=n_clusts
-        )
-        queries_rez, queries_rez_original = dcas.runner()
-
-    end = time.time()
-    print('Time taken for doing Deepest Common Ancestor Clustering: {} min'.format(round((end - start) / 60, 3)))
+    # ### Pre loading manual GO DAG using networkx in case use_DCA is True
+    # ## using manual functions for working with GO DAG tree to calculate Wang SemSim as is not in goatools
+    # if use_DCA == True:
+    #     start = time.time()
+    #     warnings.warn(
+    #         f'use_DCA == True. I hope you know what you are doing, DCA takes awhile to run, but does'
+    #         f' reduce space when plotting tree diagrams for BP_GO.\n'
+    #     )
+    #     dcas = go_dag_functionalities.run_dca(
+    #         path_obo = path_obo,
+    #         input_dat_path = input_dat_path,
+    #         go_dag = go_dag,
+    #         queries_vecs = queries_vecs,
+    #         queries_rez = queries_rez,
+    #         go_map = go_map,
+    #         nclusts=n_clusts
+    #     )
+    #     queries_rez, queries_rez_original = dcas.runner()
+    #
+    # end = time.time()
+    # print('Time taken for doing Deepest Common Ancestor Clustering: {} min'.format(round((end - start) / 60, 3)))
     ############################################################################################################
     ######################### Getting KDTree nn results for queries
     ## Define the name of the tree variables and therefore there pickled file names

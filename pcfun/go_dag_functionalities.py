@@ -10,6 +10,8 @@ import itertools
 import pandas as pd
 import scipy
 import seaborn as sns
+import time
+import copy
 from scipy.cluster.hierarchy import cophenet
 from scipy.cluster.hierarchy import fcluster
 
@@ -436,23 +438,38 @@ class run_dca():
         self.G = from_obo(path_obo)
         self.nclusts = nclusts
 
+    def parallelize_dataframe(df, func, n_cores=4):
+        df_split = np.array_split(df, n_cores)
+        pool = Pool(n_cores)
+        df = pd.concat(pool.map(func, df_split))
+        pool.close()
+        pool.join()
+        return df
 
-    def semsim_squaredf(self,ids_ls,full_tree,go_tree,go_dag):
-        blank_df = pd.DataFrame(columns = ids_ls,index = ids_ls)
+    def semsim_squaredf(self,ids_ls,go_tree,go_dag):
+        ids_ls_copy = copy.deepcopy(ids_ls)
+        ids_ls_copy_df = pd.DataFrame(ids_ls_copy)
+        ## mapping alternate GO IDs in order to calculate Wang SemSim
+        ids_ls_copy_df = ids_ls_copy_df.replace(0,self.G.alt_ids)
+        blank_df = pd.DataFrame(columns = list(ids_ls_copy_df[0]),index = list(ids_ls_copy_df[0]))
         id_names_zip_dict = {go_id:preprocess(go_dag[go_id].name) for go_id in ids_ls}
-        for x,y in itertools.combinations_with_replacement(ids_ls,2):
-            if not x in full_tree.nodes:
-                x_run = full_tree.alt_ids[x]
-            else:
-                x_run = x
-            if not y in full_tree.nodes:
-                y_run = full_tree.alt_ids[y]
-            else:
-                y_run = y
+        #df_combos = pd.DataFrame(list(itertools.combinations_with_replacement(list(ids_ls_copy_df[0]), 2)))
+        for x_run,y_run in itertools.combinations_with_replacement(list(ids_ls_copy_df[0]),2):
+            # if not x in full_tree.nodes:
+            #     x_run = full_tree.alt_ids[x]
+            # else:
+            #     x_run = x
+            # if not y in full_tree.nodes:
+            #     y_run = full_tree.alt_ids[y]
+            # else:
+            #     y_run = y
+            #print(x_run,y_run)
             score = wang(go_tree,x_run,y_run)
             #print(x,y,score)
-            blank_df[y].loc[x] = score
-            blank_df[x].loc[y] = score
+            blank_df[y_run].loc[x_run] = score
+            blank_df[x_run].loc[y_run] = score
+        blank_df.columns = ids_ls
+        blank_df.index = ids_ls
         blank_df = blank_df.rename(columns=id_names_zip_dict,index=id_names_zip_dict)
         blank_df.columns.name = None
         blank_df.index.name = None
@@ -460,20 +477,26 @@ class run_dca():
         return(blank_df,id_names_zip_dict)
 
     def runner(self):
-        bp_tree = self.G.subgraph(
-            [n for n, v in self.G.nodes(data=True) if v['namespace'] == 'biological_process'])
+        print('start')
+        # bp_tree = self.G.subgraph(
+        #     [n for n, v in self.G.nodes(data=True) if v['namespace'] == 'biological_process'])
+        # self.bp_tree = bp_tree
         n_clust = self.nclusts
+        print('created BP Tree')
         for i, query in enumerate(list(self.queries_vecs.index)):  # queries_oi_names[:]):
+            print(1,time.time())
+            print(f'Functional Annotation Clustering for: {query}')
             k,id_names_zip_dict = self.semsim_squaredf(
-                list(self.queries_rez[query]['BP_GO']['combined'].index),
-                full_tree=self.G,
-                go_tree=bp_tree,
+                ids_ls=list(self.queries_rez[query]['BP_GO']['combined']['GO ID']),
+                go_tree=self.G,
                 go_dag=self.go_dag
             )
+            print(2,time.time())
             Z = scipy.cluster.hierarchy.linkage(k, method='weighted',
                                                 metric='euclidean')  ## calculate linkages for clusters
-
+            print(3,time.time())
             clusters = fcluster(Z, n_clust, criterion='maxclust')
+            print(4,time.time())
             clust_lists = []
             dcas = {}
             dcas_goids = {}
@@ -487,12 +510,12 @@ class run_dca():
                 dca = deepest_common_ancestor(go_ids, self.go_dag)
                 dcas[str(i)] = preprocess(self.go_dag[dca].name)
                 dcas_goids[preprocess(self.go_dag[dca].name)] = dca
-
+            print(5,time.time())
             go_term_clust_map = dict(zip(k.index, list(map(str, clusters))))
             clusters = \
                 pd.DataFrame((list((k, dcas.get(v, v)) for (k, v) in go_term_clust_map.items()))).set_index(
                     [0])[1]
-
+            print(6, time.time())
             row_colors = sns.color_palette("cubehelix", len(set(clusters)))
             lut = dict(zip(clusters.unique(), row_colors))
             clusters.name = None
@@ -500,7 +523,6 @@ class run_dca():
             dca_clustermap = sns.clustermap(k, cmap='Blues', row_colors=clusters.map(lut), col_cluster=True,
                                             linewidths=0, xticklabels=False  # yticklabels=True,
                                             )
-
             for label in clusters.unique():
                 dca_clustermap.ax_col_dendrogram.bar(0, 0, color=lut[label],
                                                      label=label, linewidth=0)
@@ -510,6 +532,7 @@ class run_dca():
             dca_clustermap.ax_col_dendrogram.set_xlim([0, 0])
             os.makedirs(os.path.join(self.out_rez_path,query),exist_ok=True)
             dca_clustermap.savefig(os.path.join(self.out_rez_path,query, 'FuncAnnotClust_DCA_plot.png'))
+            print(7, time.time())
             ## Write out original ML predicted terms for each PC
             df_out = self.queries_rez_orig[query]['BP_GO']['combined']
             if not df_out.shape[0] == 0:
@@ -522,8 +545,9 @@ class run_dca():
                       'has no ML predicted terms for BP_GO, hence no reason to write out original ML predicted'
                       ' terms prior to doing functional annotation clustering based on pairwise semantic similarity.'
                       )
-
+            print(8, time.time())
             ## Overwrite DCA GO terms to self.queries_rez
             self.queries_rez[query]['BP_GO']['combined'] = pd.DataFrame(
                 dcas_goids, index=['GO ID']).T.drop_duplicates()
+            print(9, time.time())
         return(self.queries_rez,self.queries_rez_orig)

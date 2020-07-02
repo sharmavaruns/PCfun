@@ -1,5 +1,7 @@
 Cython==0.29.17
 scipy==1.2.0
+matplotlib==3.2.2
+#seaborn==0.9.0
 interact @ git+https://github.com/drugilsberg/interact.git
 pandas==0.23.4
 numpy==1.16.0
@@ -9,6 +11,8 @@ fasttext @ git+https://github.com/facebookresearch/fastText
 goatools==1.0.3
 msgpack==1.0.0
 textacy==0.6.2
-## graphviz ## unsure of how to appropriately install pygraphviz. pip install -r requirements.txt worked for me in PyCharm, but not in my separate conda environment.
-## pip install pygraphviz --install-option="--include-path=/usr/local/include/graphviz/" --install-option="--library-path=/usr/local/lib/graphviz"
-pygraphviz==1.3  ### This may need to be backdated
+### Make sure to pip install pygraphviz with following command separately.
+### pip install pygraphviz==1.5 --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
+### Otherwise the --install-option command makes the requirements.txt file to be run from scratch
+### I am not sure how this will work when installing on Linux or Windows (also none oof this code has ever
+### been tested on Windows yet.
