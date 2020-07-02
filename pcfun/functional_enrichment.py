@@ -38,9 +38,7 @@ def functional_enrichment(predterms_dict,  # =mf_dict_predterms
             for ii in assoc:
                 isSignif = False
                 M = len(set(kdtree_rez['NNs_natlang']))  ## Total number of GO terms in MF, BP, or CC set
-                n_hyper = len(set.intersection(assoc[ii], set(kdtree_rez
-                                                              [
-                                                                  'GO ID'])))  ## number of intersections between children terms of ML GO term of interest and full set of GO Terms
+                n_hyper = len(set.intersection(assoc[ii], set(kdtree_rez['GO ID'])))  ## number of intersections between children terms of ML GO term of interest and full set of GO Terms
                 N = len(set(pop_new))  ## Size of sample (should be equal to iloc_cut_dict[go_class])
                 if not N == iloc_cut_dict[go_class]:
                     raise ValueError('N should be equal to iloc_cut. Currently N={} and iloc_cut_dict[{}]={}'
@@ -60,11 +58,11 @@ def functional_enrichment(predterms_dict,  # =mf_dict_predterms
                 else:
                     alpha_crit_str = str(alpha_crit)
                 if not ii == 'dummy':
-                    print('\t{}: {} {} alpha_crit = {}'.format(
-                        ii, hash_gos[ii], go_tree[hash_gos[ii]].name, alpha_crit_str
-                    )
-                    )
-                    print('\t\tM = {}; N = {}; n = {}; x = {}'.format(M, N, n_hyper, x))
+                    if isSignif:
+                        print('\t{}: {} {} alpha_crit = {}'.format(
+                            ii, hash_gos[ii], go_tree[hash_gos[ii]].name, alpha_crit_str
+                        ))
+                        print('\t\tM = {}; N = {}; n = {}; x = {}'.format(M, N, n_hyper, x))
                     res_dict[pc][go_class][hash_gos[ii]] = {'go_name': core.preprocess(go_tree[hash_gos[ii]].name),
                                                             'M': M, 'N': N, 'n_hyper': n_hyper, 'x': x, 'pval': pval,
                                                             'alpha_alt': alpha_alt, 'alpha_crit': alpha_crit,
@@ -74,8 +72,9 @@ def functional_enrichment(predterms_dict,  # =mf_dict_predterms
                                                             'pos': hash_gos_pos[hash_gos[ii]]
                                                             }
                 else:
-                    print('\t{} alpha_crit = {}'.format(ii, alpha_crit_str))
-                    print('\t\tM = {}; N = {}; n = {}; x = {}'.format(M, N, n_hyper, x))
+                    if isSignif:
+                        print('\t{} alpha_crit = {}'.format(ii, alpha_crit_str))
+                        print('\t\tM = {}; N = {}; n = {}; x = {}'.format(M, N, n_hyper, x))
                     res_dict[pc][go_class][ii] = {'go_name': ii,
                                                   'M': M, 'N': N, 'n_hyper': n_hyper, 'x': x, 'pval': pval,
                                                   'alpha_alt': alpha_alt, 'alpha_crit': alpha_crit,

@@ -8,13 +8,14 @@ import pickle
 import warnings
 import pandas as pd
 from goatools import obo_parser
-from pcfun.mapping import ftxt_model
+import pcfun.mapping as mpng
+from pcfun import functional_enrichment
 from pcfun import go_dag_functionalities
 from interact.nn_tree import NearestNeighborsTree
 from pcfun.core import preprocess,AutoVivification
 from pcfun.kdtree_nns import query_tree_get_mqueries_nns
 from pcfun.get_supervised_predterms import model_predterms
-from pcfun.functional_enrichment import functional_enrichment
+
 
 
 
@@ -30,10 +31,9 @@ if __name__ == '__main__':
     input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
     req_inputs_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs'
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
-    abstr_model = ftxt_model(path_to_fasttext_embedding=embedding_path)
-    queries_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True)
+    abstr_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path)
+    queries_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True,vecs_file_prefix='query')
     queries_list = list(queries_vecs.index)
-
     path_obo = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/go-basic.obo'
 
     go_dag = obo_parser.GODag(path_obo)
@@ -184,7 +184,7 @@ if __name__ == '__main__':
     ############################################################################################################
     ######################### Functional Enrichment analysis
     start = time.time()
-    test_funcenrich_rez = functional_enrichment(predterms_dict=queries_rez,
+    test_funcenrich_rez = functional_enrichment.functional_enrichment(predterms_dict=queries_rez,
                                                 kdtree_dict=dict((k, consol_dict_test[k])
                                                                  for k in queries_rez.keys()),
                                                 go_tree=go_dag,
@@ -221,40 +221,32 @@ if __name__ == '__main__':
                     os.path.join(out_rez_path, query,go_class, 'KDTree_list.tsv'), sep='\t'
                 )
             else:
-                print(query, go_class,'has no ML predicted terms, hence no reason to write out func enrichment.')
+                print(query, go_class,'has no ML predicted terms, only providing KDTree results.')
+                os.makedirs(os.path.join(out_rez_path,query,go_class), exist_ok=True)
+                consol_dict_test[query][go_class].iloc[:iloc_cut].to_csv(
+                    os.path.join(out_rez_path, query,go_class, 'KDTree_list.tsv'), sep='\t'
+                )
     end = time.time()
     print('Time taken for writing out results: {} min'.format(round((end - start) / 60, 3)))
     ############################################################################################################
     ############################################################################################################
-    ######################### Creating GO plots
+    ######################### Creating GO Tree Diagrams for functionally enriched terms
     start = time.time()
-    tree_diags_plot = ['BP_GO']#'MF_GO','CC_GO'] ##
-
+    tree_diags_plot = ['MF_GO','BP_GO','CC_GO']#'MF_GO','CC_GO'] ##
+    counter_cut = 10
     for query in list(queries_vecs.index):
         for go_class,iloc_cut in {'BP_GO': 11044, 'MF_GO': 5213,'CC_GO': 1896}.items():
             if not go_class in tree_diags_plot:
                 next
             else:
-                if go_class == 'BP_GO':
-                    if not use_DCA:
-                        warnings.warn(
-                            f'I hope you know what you are doing, BP_GO takes'
-                            f' forever to run and lots of space!\n'
-                            f'I suggest only plotting "MF_GO" and/or "CC_GO" diagrams as normally not as many created.'
-                        )
-                    else:
-                        warnings.warn(
-                            f'Tree Diagram creation for BP_GO may take some time to run,'
-                            f' but it looks like you have used the functional '
-                            f'annotation clustering (use_DCA=True), which should help.'
-                        )
+                counter = 0
                 for go_id_parent in test_funcenrich_rez[query][go_class].keys():
                     if not go_id_parent == 'dummy':
                         if test_funcenrich_rez[query][go_class][go_id_parent]['isSignif'] == True:
                             print(query, go_class)
                             os.makedirs(os.path.join(out_rez_path, query, go_class), exist_ok=True)
                             print('{} Tree for:'.format(go_class), query, )
-                            name_file = go_dag[go_id_parent].name + '.png'
+                            name_file = f'{counter+1}___{go_dag[go_id_parent].name}.png'
 
                             print('\t',go_id_parent, go_dag[go_id_parent].name)
                             succ = test_funcenrich_rez[query][go_class][go_id_parent]['successes']
@@ -274,8 +266,21 @@ if __name__ == '__main__':
                                 draw_parents=True, draw_children=False
                             )
                             diagram.draw(lineage_png_test, prog='dot')
+                            counter += 1
+                        if counter > counter_cut:
+                            warnings.warn(f'Greater than {counter_cut+1} terms are functionally enriched\n'
+                                          f'Only plotting Tree Diagrams for the top {counter_cut+1} most '
+                                          f'significant functionally enriched terms.'
+                                          )
+                            break
     end = time.time()
     print('Time taken for plotting results: {} min'.format(round((end - start) / 60, 3)))
+
+    print('Writing out binary functional enrichment results and full kd tree results')
+    with open(os.path.join(out_rez_path,'func_enrich_rez.pickle'),'wb') as f:
+        pickle.dump(test_funcenrich_rez,f)
+    with open(os.path.join(out_rez_path,'kdtree_rez.pickle'),'wb') as f1:
+        pickle.dump(consol_dict_test,f1)
 
     end_entire = time.time()
     print('Time taken for analysis up to functional enrichment so far to run: {} min'.format(round((end_entire - start_entire) / 60, 3)))

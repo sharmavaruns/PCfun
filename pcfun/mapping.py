@@ -12,6 +12,7 @@ import fasttext
 import textacy
 import os
 from pcfun.core import preprocess
+import time
 
 
 class ftxt_model():
@@ -90,8 +91,11 @@ class ftxt_model():
             raise ValueError(f'UniProt ID mapping to GeneName not yet implemented')
         queries_vec_normalized = self.queries_df_to_vecs(input_df=input_df)
         if write_vecs:
+            prefix = kwargs.get('vecs_file_prefix',f'out_{time.time()}')
+            out_name = prefix + '_vecs.tsv'
+            print('Writing out vecs\n',os.path.join(os.path.dirname(path_to_tsv), out_name))
             queries_vec_normalized.to_csv(
-                os.path.join(os.path.dirname(path_to_tsv), 'vecs.tsv'),
+                os.path.join(os.path.dirname(path_to_tsv), out_name),
                 sep='\t', header=True, index=True
             )
         return (queries_vec_normalized)
