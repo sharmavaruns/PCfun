@@ -6,6 +6,7 @@ import os
 import time
 import pickle
 import warnings
+import argparse
 import pandas as pd
 from goatools import obo_parser
 import pcfun.mapping as mpng
@@ -18,23 +19,17 @@ from pcfun.get_supervised_predterms import model_predterms
 
 
 
-
 # NOTE: here we should put the main command line script.
 
-
-if __name__ == '__main__':
+def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
+         path_obo:str,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
     start_entire = time.time()
-    is_UniProt = False ## should come from command line flag
     #use_DCA = True
-    n_clusts = 25
-    embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
-    input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
-    req_inputs_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs'
+    embedding_path = embed_path
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
     abstr_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path)
     queries_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True,vecs_file_prefix='query')
     queries_list = list(queries_vecs.index)
-    path_obo = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/go-basic.obo'
 
     go_dag = obo_parser.GODag(path_obo)
     go_map = pd.DataFrame([(preprocess(go_dag[go_id].name), go_id, go_dag[go_id].namespace)
@@ -286,3 +281,34 @@ if __name__ == '__main__':
     print('Time taken for analysis up to functional enrichment so far to run: {} min'.format(round((end_entire - start_entire) / 60, 3)))
 
     pass
+
+
+if __name__ == '__main__':
+    """Get k nns from COWS list"""
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding', required=True)
+    parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
+    parser.add_argument('-r', '--req_inputs_path', type=str, help='path to directory with required dependency files',
+                        required=True)
+    parser.add_argument('-o', '--path_obo', type=str, help='path to Gene Ontology .obo file',
+                        required=True)
+    parser.add_argument("-u",'--is_UniProt', action='store_true', default=False)
+
+    kwargs = vars(parser.parse_args())
+    print(kwargs)
+    # if kwargs.get('infile') and kwargs.get('query'):
+    #     raise ValueError(f"either input a multi query file or single string query")
+
+    # assert not ('infile' in kwargs) & ('query' in kwargs), f"either input a multi query file or single string query"
+    main(**kwargs)
+    #
+    # embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
+    # input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
+    # req_inputs_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs'
+    # path_obo = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/go-basic.obo'
+    # is_UniProt = False  ## should come from command line flag
+
+    ##### Run following lines in command line from: /Users/varunsharma/PycharmProjects/PCfun
+    ##### Assumes is_UniProt flag is not given, thereby setting it to False in python script
+    # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
+    # python ./bin/pcfun.py -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test1/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
