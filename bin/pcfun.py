@@ -1,30 +1,35 @@
 # !/usr/bin/env python3
 """PCFun executable scipt."""
 
-## dependencies
+print(f'{__name__}')
+print('hello_bye')
 import os
-import time
 import pickle
 import warnings
 import argparse
 import pandas as pd
 from goatools import obo_parser
-print('hello_bye')
+import pcfun
 import pcfun.mapping as mpng
+print('hello')
 from pcfun import functional_enrichment
 from pcfun import go_dag_functionalities
 from interact.nn_tree import NearestNeighborsTree
-from pcfun.core import preprocess,AutoVivification
+from pcfun.core import preprocess, AutoVivification
 from pcfun.kdtree_nns import query_tree_get_mqueries_nns
 from pcfun.get_supervised_predterms import model_predterms
-
-
 
 # NOTE: here we should put the main command line script.
 
 def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
          path_obo:str,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
+    import time
     start_entire = time.time()
+
+
+    print('Should be within main function')
+    print(f'{__name__}')
+
     #use_DCA = True
     embedding_path = embed_path
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
@@ -285,6 +290,9 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
 
 
 if __name__ == '__main__':
+    import argparse
+
+
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding', required=True)
     parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
