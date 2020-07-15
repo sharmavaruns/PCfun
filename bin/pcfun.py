@@ -9,6 +9,7 @@ import warnings
 import argparse
 import pandas as pd
 from goatools import obo_parser
+print('hello_bye')
 import pcfun.mapping as mpng
 from pcfun import functional_enrichment
 from pcfun import go_dag_functionalities
@@ -284,7 +285,6 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
 
 
 if __name__ == '__main__':
-    """Get k nns from COWS list"""
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding', required=True)
     parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
