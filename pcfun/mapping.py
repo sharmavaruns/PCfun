@@ -13,6 +13,7 @@ import textacy
 import os
 from pcfun.core import preprocess
 import time
+import warnings
 import urllib.parse
 import urllib.request
 import io
@@ -45,44 +46,81 @@ class ftxt_model():
                                               index=vecs_df.index)
         return(queries_vec_normalized)
 
-    # def uniprots_to_gnames(self,input_df):
-    #     input_df_split = input_df[0].apply(lambda x: x.split(';'))
-    #     queries_ls = list(input_df_split)
-    #     uni_ids_set = set([subls for ls in queries_ls for subls in ls])
-    #     query_ls = list(uni_ids_set)
-    #     url = 'https://www.uniprot.org/uploadlists/'
-    #
-    #     params = {
-    #         'from': 'ACC+ID',
-    #         'to': 'GENENAME',
-    #         'format': 'tab',
-    #         'query': ' '.join(query_ls)  # 'P40925 P40926 O43175 Q9UM73 P97793'
-    #     }
-    #     data = urllib.parse.urlencode(params)
-    #     data = data.encode('utf-8')
-    #     req = urllib.request.Request(url, data)
-    #     with urllib.request.urlopen(req) as f:
-    #         response = f.read()
-    #     # print(response.decode('utf-8'))
-    #     df_map = pd.read_csv(io.StringIO(response.decode('utf-8')), sep='\t')
-    #     #return(df_map,0)
-    #     df_map.columns = ['UniProt_ID', 'Gene_Name']
-    #     print('hello')
-    #     uni_gn_dict = dict(zip(df_map['UniProt_ID'],df_map['Gene_Name']))
-    #
-    #     #test_ls_split = list(map(lambda xx: xx.split(';'), queries_ls))
-    #     #uni_gn_dict = {'a': '1', 'b': '2', 'c': '3', 'd': '4', 'l': '5', 'j': '6'}
-    #     return(queries_ls,uni_gn_dict,df_map)
-    #     ########## Getting a none type because a particular uniprot is not in the mapped set.
-    #     ########## use: input_df = pd.DataFrame({0:list(corum_complexes_cut['subunits(UniProt IDs)'].apply(lambda x: ';'.join(x)))})
-    #     ########## use: queries_ls,uni_gn_dict,df_map = uniprots_to_gnames(input_df)
-    #     ########## use: uni_ids_set = set([subls for ls in queries_ls for subls in ls])
-    #     ########## use: uni_ids_set - uni_gn_dict.keys() to for example test set of issues
-    #     repl_ls = [';'.join(list(map(uni_gn_dict.get, keys))) for keys in queries_ls]
-    #     input_df_old = input_df.copy(deep=True)
-    #     input_df = pd.DataFrame(repl_ls)
-    #     # repl_ls == [['1', '2', '3'], ['2', '5', '4', '6']]
-    #     return(input_df,input_df_old)
+    def uniprots_to_gnames(self,input_df):
+        input_df_split = input_df[0].apply(lambda x: x.split(';'))
+        queries_ls = list(input_df_split)
+        uni_ids_set = set([subls for ls in queries_ls for subls in ls])
+        query_ls = list(uni_ids_set)
+        url = 'https://www.uniprot.org/uploadlists/'
+
+        params = {
+            'from': 'ACC+ID',
+            'to': 'GENENAME',
+            'format': 'tab',
+            'query': ' '.join(query_ls)  # 'P40925 P40926 O43175 Q9UM73 P97793'
+        }
+        data = urllib.parse.urlencode(params)
+        data = data.encode('utf-8')
+        req = urllib.request.Request(url, data)
+        with urllib.request.urlopen(req) as f:
+            response = f.read()
+        # print(response.decode('utf-8'))
+        df_map = pd.read_csv(io.StringIO(response.decode('utf-8')), sep='\t')
+        #return(df_map,0)
+        #df_map.columns = ['UniProt_ID', 'Gene_Name']
+        #uni_gn_dict = dict(zip(df_map['UniProt_ID'],df_map['Gene_Name']))
+        uni_gn_dict = dict(zip(df_map['From'], df_map['To']))
+
+        ### For UniProt IDs where no gene names were returned, mapping to Gene ID
+        no_gns = list(uni_ids_set - uni_gn_dict.keys())
+        params = {
+            'from': 'ACC+ID',
+            'to': 'ID',
+            'format': 'tab',
+            'query': ' '.join(no_gns)  # 'P40925 P40926 O43175 Q9UM73 P97793'
+        }
+        data = urllib.parse.urlencode(params)
+        data = data.encode('utf-8')
+        req = urllib.request.Request(url, data)
+        with urllib.request.urlopen(req) as f:
+            response = f.read()
+        # print(response.decode('utf-8'))
+        df_map_no_gns = pd.read_csv(io.StringIO(response.decode('utf-8')), sep='\t')
+
+        df_map_no_gns['To'] = df_map_no_gns['To'].apply(lambda x: x.split('_')[0])
+
+        df_map_final = pd.concat([df_map,df_map_no_gns],ignore_index=True)
+        ## keeping first returned Gene Name for UniProt IDs with multiple gene names returned
+        df_map_final = df_map_final.drop_duplicates('From',keep='first').reset_index(drop=True)
+        uni_gn_dict_final = dict(zip(df_map_final['From'], df_map_final['To']))
+        no_gn_final = list(uni_ids_set - uni_gn_dict_final.keys())
+        df_map_final = pd.concat([
+            df_map_final,
+            pd.DataFrame({'From':no_gn_final,'To':['UnmappedUniProtID']*len(no_gn_final)})
+        ],ignore_index=True)
+        uni_gn_dict_final = dict(zip(df_map_final['From'], df_map_final['To']))
+
+        assert (len(uni_ids_set - set(df_map_final['From'])) == 0)
+        #return(queries_ls,uni_gn_dict_final,df_map_final)
+        ########## Getting a none type because a particular uniprot is not in the mapped set.
+        ########## use: input_df = pd.DataFrame({0:list(corum_complexes_cut['subunits(UniProt IDs)'].apply(lambda x: ';'.join(x)))})
+        ########## use: queries_ls,uni_gn_dict,df_map = uniprots_to_gnames(input_df)
+        ########## use: uni_ids_set = set([subls for ls in queries_ls for subls in ls])
+        ########## use: no_gns = list(uni_ids_set - uni_gn_dict.keys())
+        repl_ls = [] # list to store replaced queries with UniProt Mapped IDs
+        for idx,uni_query in enumerate(queries_ls):
+            mapped_rez = list(map(uni_gn_dict_final.get, uni_query))
+            if 'OBSOLETE' in mapped_rez or 'UnmappedUniProtID' in mapped_rez:
+                warnings.warn(
+                    f'query # {idx}: {uni_query} maps to --> {mapped_rez}.\n'
+                    f'Since some subunits are mapped to obsolete or are Unmapped, this query will be removed. '
+                )
+            else:
+                repl_ls.append(';'.join(mapped_rez))
+
+        input_df_old = input_df.copy(deep=True)
+        input_df = pd.DataFrame(repl_ls)
+        return(input_df,input_df_old)
 
     def tsv_to_vecs(self, path_to_tsv: str, is_UniProt=False, write_vecs=True, **kwargs):
         '''
@@ -104,34 +142,38 @@ class ftxt_model():
                 f'Check input file at: {path_to_tsv}'
             )
         if is_UniProt:
-            if kwargs.get('taxon_id', None) == None:
-                import warnings
-                warnings.warn(
-                    'You have set True for "is_UniProt" without providing "taxon_id" argument. Therefore '
-                    'defaulting to taxon_id=9606 for homo sapiens. Will attempt to download that file '
-                    'to map UniProt IDs to Gene Names'
-                )
-            taxon_id = kwargs.get('taxon_id', 9606)
-            try:
-                taxon_id = int(taxon_id)
-                if not taxon_id in set(self.supp_tax_ids):
-                    raise ValueError(
-                        f'You have input an unsupported taxon id. '
-                        f'Please input an integer corresponding to one of the following taxon_ids that '
-                        f'are supported by UniProt. I am downloading files from: '
-                        f'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
-                        f'\nSupported taxon ids are: {self.supp_tax_ids}'
-                    )
-            except:
-                raise ValueError(
-                    f'You have input a taxon id that is not able to be converted to an integer. '
-                    f'Please input an integer corresponding to one of the following taxon_ids that '
-                    f'are supported by UniProt. I am downloading files from: '
-                    f'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
-                    f'\nSupported taxon ids are: {self.supp_tax_ids}'
-                )
-
-            raise ValueError(f'UniProt ID mapping to GeneName not yet implemented')
+            input_df, input_df_old = self.uniprots_to_gnames(input_df)
+            input_df.to_csv(path_to_tsv,index=False,header=False,sep = '\t')
+            path_to_old_input_df = path_to_tsv.split('.')[0]+'_preUniProtmapped.tsv'
+            input_df_old.to_csv(path_to_tsv, index=False, header=False, sep='\t')
+            # if kwargs.get('taxon_id', None) == None:
+            #     import warnings
+            #     warnings.warn(
+            #         'You have set True for "is_UniProt" without providing "taxon_id" argument. Therefore '
+            #         'defaulting to taxon_id=9606 for homo sapiens. Will attempt to download that file '
+            #         'to map UniProt IDs to Gene Names'
+            #     )
+            # taxon_id = kwargs.get('taxon_id', 9606)
+            # try:
+            #     taxon_id = int(taxon_id)
+            #     if not taxon_id in set(self.supp_tax_ids):
+            #         raise ValueError(
+            #             f'You have input an unsupported taxon id. '
+            #             f'Please input an integer corresponding to one of the following taxon_ids that '
+            #             f'are supported by UniProt. I am downloading files from: '
+            #             f'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
+            #             f'\nSupported taxon ids are: {self.supp_tax_ids}'
+            #         )
+            # except:
+            #     raise ValueError(
+            #         f'You have input a taxon id that is not able to be converted to an integer. '
+            #         f'Please input an integer corresponding to one of the following taxon_ids that '
+            #         f'are supported by UniProt. I am downloading files from: '
+            #         f'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/'
+            #         f'\nSupported taxon ids are: {self.supp_tax_ids}'
+            #     )
+            #
+            # raise ValueError(f'UniProt ID mapping to GeneName not yet implemented')
         queries_vec_normalized = self.queries_df_to_vecs(input_df=input_df)
         if write_vecs:
             prefix = kwargs.get('vecs_file_prefix',f'out_{time.time()}')
@@ -177,6 +219,7 @@ class ftxt_model():
 # input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
 # abstr_model = ftxt_model(path_to_fasttext_embedding=fasttext_path)
 # test_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True)
+
 # time_start = time.time()
 # path_corum = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/coreComplexes.txt'
 # # parse file
