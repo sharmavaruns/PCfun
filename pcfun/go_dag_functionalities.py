@@ -5,6 +5,7 @@ import networkx as nx
 import itertools
 import pygraphviz as pgv
 import matplotlib
+matplotlib.use('TkAgg')
 from pcfun.core import preprocess
 import itertools
 import pandas as pd

@@ -1,17 +1,16 @@
 # !/usr/bin/env python3
 """PCFun executable scipt."""
 
-print(f'{__name__}')
-print('hello_bye')
+# print(f'{__name__}')
+# import sys
+# print(f'{sys.executable}')
 import os
 import pickle
 import warnings
 import argparse
 import pandas as pd
 from goatools import obo_parser
-import pcfun
-import pcfun.mapping as mpng
-print('hello')
+from pcfun import mapping as mpng
 from pcfun import functional_enrichment
 from pcfun import go_dag_functionalities
 from interact.nn_tree import NearestNeighborsTree
@@ -22,18 +21,16 @@ from pcfun.get_supervised_predterms import model_predterms
 # NOTE: here we should put the main command line script.
 
 def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
-         path_obo:str,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
+         path_obo:str,is_GeneName = False,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
     import time
     start_entire = time.time()
-
-
-    print('Should be within main function')
-    print(f'{__name__}')
-
-    #use_DCA = True
+    if is_UniProt == True:
+        is_GeneName = True
     embedding_path = embed_path
+    out_storage_path = os.path.join(os.path.dirname(input_dat_path), 'Stored_Items')
+    os.makedirs(out_storage_path,exist_ok=True)
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
-    abstr_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path)
+    abstr_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path,req_inputs_path=req_inputs_path)
     queries_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True,vecs_file_prefix='query')
     queries_list = list(queries_vecs.index)
 
@@ -61,10 +58,11 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
     ######################### Getting supervised RF results for queries
     ## Loading in UniProt supervised models
     supervised_models = AutoVivification()
-    if is_UniProt == True:
+    if is_GeneName == True:
         name_type = 'PC_GO_Uniprot'
     else:
         name_type = 'PC_GO_w_complex'
+    print(f'Supervised model type being used: {name_type}')
     for go_class in ['BP', 'CC', 'MF']:
         for dat_n in range(5):
             for model_type in ['rf']:
@@ -104,6 +102,8 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
             queries_rez[pc_query][go_class + '_GO']['combined'] = \
             queries_rez[pc_query][go_class + '_GO']['combined'].loc[
                 queries_rez[pc_query][go_class + '_GO']['combined']['pos'] >= 0.5]
+    with open(os.path.join(out_storage_path,'ML_predictions.pickle'),'wb') as f:
+        pickle.dump(queries_rez,f)
     end = time.time()
     print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
 
@@ -278,9 +278,9 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
     print('Time taken for plotting results: {} min'.format(round((end - start) / 60, 3)))
 
     print('Writing out binary functional enrichment results and full kd tree results')
-    with open(os.path.join(out_rez_path,'func_enrich_rez.pickle'),'wb') as f:
+    with open(os.path.join(out_storage_path,'func_enrich_rez.pickle'),'wb') as f:
         pickle.dump(test_funcenrich_rez,f)
-    with open(os.path.join(out_rez_path,'kdtree_rez.pickle'),'wb') as f1:
+    with open(os.path.join(out_storage_path,'kdtree_rez.pickle'),'wb') as f1:
         pickle.dump(consol_dict_test,f1)
 
     end_entire = time.time()
@@ -290,9 +290,6 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
 
 
 if __name__ == '__main__':
-    import argparse
-
-
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding', required=True)
     parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
@@ -300,14 +297,17 @@ if __name__ == '__main__':
                         required=True)
     parser.add_argument('-o', '--path_obo', type=str, help='path to Gene Ontology .obo file',
                         required=True)
-    parser.add_argument("-u",'--is_UniProt', action='store_true', default=False)
+    parser.add_argument("-u",'--is_UniProt', action='store_true', default=False,
+                        help='Flag to indicate if input queries are UniProt ids that are ";" separated per query.'
+                        ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
+                        )
+    parser.add_argument("-g",'--is_GeneName', action='store_true', default=False,
+                        help='Flag to indicate if input queries are GeneNames that are ";" separated per query.'
+                        ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
+                        )
 
     kwargs = vars(parser.parse_args())
     print(kwargs)
-    # if kwargs.get('infile') and kwargs.get('query'):
-    #     raise ValueError(f"either input a multi query file or single string query")
-
-    # assert not ('infile' in kwargs) & ('query' in kwargs), f"either input a multi query file or single string query"
     main(**kwargs)
     #
     # embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
@@ -318,5 +318,10 @@ if __name__ == '__main__':
 
     ##### Run following lines in command line from: /Users/varunsharma/PycharmProjects/PCfun
     ##### Assumes is_UniProt flag is not given, thereby setting it to False in python script
+    ##### Previously ran "pip install -e ." to install pcfun
     # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
-    # python ./bin/pcfun.py -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test1/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
+    # pcfun -g -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test1/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
+
+
+    ##### Currently getting few ML predictions because using Abstract embedding vectors insted of full text
+    ##### embedding vectors with supervised ML models trained on full text embedding vectors

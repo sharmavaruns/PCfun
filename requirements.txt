@@ -1,6 +1,6 @@
 Cython==0.29.17
 scipy==1.2.0
-matplotlib==3.2.2
+matplotlib==3.0.2
 #seaborn==0.9.0
 interact @ git+https://github.com/drugilsberg/interact.git
 pandas==0.23.4
