@@ -1,5 +1,7 @@
+import time
 import numpy as np
 import pandas as pd
+from multiprocessing import Pool
 
 
 def model_predterms(go_vecs,pc,pc_vec,model):
@@ -57,3 +59,74 @@ def create_full_models(path_main,mrmr_cols = None,seed = 123):  ## Maybe shouldn
                 os.makedirs(os.path.dirname(model_path_save), exist_ok=True)
                 with open(model_path_save,'wb') as f:
                     pickle.dump(fit,f)
+
+
+def get_model_predterms_runner(queries_rez,mf_vecs,bp_vecs,cc_vecs,queries_vecs,supervised_models,name_type):
+    ## Get functional predictions for test protein complexes (due to time of running algorithm)
+    start = time.time()
+    n = 5
+    for i, pc_query in enumerate(list(queries_vecs.index)):  # queries_oi_names[:]):
+        for go_class, go_vectors in {'MF': mf_vecs, 'BP': bp_vecs, 'CC': cc_vecs}.items():
+            print(i, pc_query, go_class)
+            tmp_ls = []
+            for run_n in range(n):
+                queries_rez[pc_query][go_class+'_GO'][run_n] = model_predterms(go_vectors,
+                                                                                        pc_query,
+                                                                                        queries_vecs.loc[pc_query],
+                                                                                    model=supervised_models[go_class][run_n]['rf']
+                                                                                    )
+                weight = 1 / n
+                tmp_ls.append(queries_rez[pc_query][go_class + '_GO'][run_n]['pos'] * weight)
+
+            ## Get combined score results from the different models trained on each data set
+            queries_rez[pc_query][go_class+'_GO']['combined'] = pd.DataFrame(
+                sum(tmp_ls).sort_values(ascending=False),
+                columns=['pos']
+                )
+            queries_rez[pc_query][go_class+'_GO']['combined']['GO ID'] = list(
+                queries_rez[pc_query][go_class+'_GO']['combined'].index.map(go_map_dict))
+            ## Store only values with 'pos' >= 0.5
+            queries_rez[pc_query][go_class + '_GO']['combined'] = \
+            queries_rez[pc_query][go_class + '_GO']['combined'].loc[
+                queries_rez[pc_query][go_class + '_GO']['combined']['pos'] >= 0.5]
+    end = time.time()
+    print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
+    return(queries_rez)
+
+def get_model_predterms_norm(queries_rez,queries_vecs,mf_vecs,bp_vecs,cc_vecs,supervised_models,name_type):
+    n = 5
+    for i, pc_query in enumerate(list(queries_vecs.index)):  # queries_oi_names[:]):
+        for go_class, go_vectors in {'MF': mf_vecs, 'BP': bp_vecs, 'CC': cc_vecs}.items():
+            print(i, pc_query, go_class)
+            tmp_ls = []
+            for run_n in range(n):
+                queries_rez[pc_query][go_class+'_GO'][run_n] = model_predterms(go_vectors,
+                                                                                        pc_query,
+                                                                                        queries_vecs.loc[pc_query],
+                                                                                    model=supervised_models[go_class][run_n]['rf']
+                                                                                    )
+                weight = 1 / n
+                tmp_ls.append(queries_rez[pc_query][go_class + '_GO'][run_n]['pos'] * weight)
+
+            ## Get combined score results from the different models trained on each data set
+            queries_rez[pc_query][go_class+'_GO']['combined'] = pd.DataFrame(
+                sum(tmp_ls).sort_values(ascending=False),
+                columns=['pos']
+                )
+            queries_rez[pc_query][go_class+'_GO']['combined']['GO ID'] = list(
+                queries_rez[pc_query][go_class+'_GO']['combined'].index.map(go_map_dict))
+            ## Store only values with 'pos' >= 0.5
+            queries_rez[pc_query][go_class + '_GO']['combined'] = \
+            queries_rez[pc_query][go_class + '_GO']['combined'].loc[
+                queries_rez[pc_query][go_class + '_GO']['combined']['pos'] >= 0.5]
+
+
+def get_model_predterms_mp(queries_rez,queries_vecs,*args):#mf_vecs,bp_vecs,cc_vecs,supervised_models,name_type):
+    print(f'queries_vecs.shape = {queries_vecs.shape}')
+    chunks = np.array_split(queries_vecs,5)
+
+    pool = Pool(processes=5)
+
+    queries_rez = pool.map(get_model_predterms_mp, queries_rez,chunks,*args)
+
+    return(queries_rez)

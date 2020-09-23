@@ -11,6 +11,7 @@ import argparse
 import pandas as pd
 from goatools import obo_parser
 from pcfun import mapping as mpng
+import multiprocessing as mp
 from pcfun import functional_enrichment
 from pcfun import go_dag_functionalities
 from interact.nn_tree import NearestNeighborsTree
@@ -30,8 +31,13 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
     out_storage_path = os.path.join(os.path.dirname(input_dat_path), 'Stored_Items')
     os.makedirs(out_storage_path,exist_ok=True)
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
-    abstr_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path,req_inputs_path=req_inputs_path)
-    queries_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True,vecs_file_prefix='query')
+    embed_model = mpng.ftxt_model(path_to_fasttext_embedding=embedding_path,req_inputs_path=req_inputs_path)
+    queries_vecs = embed_model.tsv_to_vecs(
+        path_to_tsv=input_dat_path,
+        write_vecs=True,
+        vecs_file_prefix='query',
+        is_UniProt=is_UniProt
+    )
     queries_list = list(queries_vecs.index)
 
     go_dag = obo_parser.GODag(path_obo)
@@ -44,18 +50,19 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
     ## should implement choice to read-in GO vectors from file perhaps, though this doesn't take too long
     mf_terms = pd.DataFrame([(go_id, preprocess(go_dag[go_id].name)) for go_id in go_dag.keys()
                              if go_dag[go_id].namespace == 'molecular_function'], columns=['GO ID', 'GO'])
-    mf_vecs = abstr_model.queries_df_to_vecs(list(mf_terms['GO'])).drop_duplicates()
+    mf_vecs = embed_model.queries_df_to_vecs(list(mf_terms['GO'])).drop_duplicates()
 
     bp_terms = pd.DataFrame([(go_id, preprocess(go_dag[go_id].name)) for go_id in go_dag.keys()
                              if go_dag[go_id].namespace == 'biological_process'], columns=['GO ID', 'GO'])
-    bp_vecs = abstr_model.queries_df_to_vecs(list(bp_terms['GO'])).drop_duplicates()
+    bp_vecs = embed_model.queries_df_to_vecs(list(bp_terms['GO'])).drop_duplicates()
 
     cc_terms = pd.DataFrame([(go_id, preprocess(go_dag[go_id].name)) for go_id in go_dag.keys()
                              if go_dag[go_id].namespace == 'cellular_component'], columns=['GO ID', 'GO'])
-    cc_vecs = abstr_model.queries_df_to_vecs(list(cc_terms['GO'])).drop_duplicates()
+    cc_vecs = embed_model.queries_df_to_vecs(list(cc_terms['GO'])).drop_duplicates()
 
     ############################################################################################################
     ######################### Getting supervised RF results for queries
+    from pcfun.get_supervised_predterms import get_model_predterms_norm,get_model_predterms_mp
     ## Loading in UniProt supervised models
     supervised_models = AutoVivification()
     if is_GeneName == True:
@@ -75,9 +82,13 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
                 supervised_models[go_class][dat_n][model_type] = model
 
     ## Get functional predictions for test protein complexes (due to time of running algorithm)
-    start = time.time()
-    n = 5
     queries_rez = AutoVivification()
+    start = time.time()
+    queries_rez_1 = get_model_predterms_mp(queries_rez, queries_vecs, mf_vecs, bp_vecs, cc_vecs, supervised_models, name_type)
+    end = time.time()
+    print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
+
+    n = 5
     for i, pc_query in enumerate(list(queries_vecs.index)):  # queries_oi_names[:]):
         for go_class, go_vectors in {'MF': mf_vecs, 'BP': bp_vecs, 'CC': cc_vecs}.items():
             print(i, pc_query, go_class)
@@ -106,6 +117,7 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
         pickle.dump(queries_rez,f)
     end = time.time()
     print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
+
 
     ### Need to include CC QuickGO results into here
 
@@ -307,6 +319,8 @@ if __name__ == '__main__':
                         )
 
     kwargs = vars(parser.parse_args())
+    if kwargs['is_UniProt']:
+        kwargs['is_GeneName'] = True
     print(kwargs)
     main(**kwargs)
     #
@@ -322,6 +336,8 @@ if __name__ == '__main__':
     # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
     # pcfun -g -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test1/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
 
+    ## UniProt mapping command
+    # pcfun -u -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test3/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
 
     ##### Currently getting few ML predictions because using Abstract embedding vectors insted of full text
     ##### embedding vectors with supervised ML models trained on full text embedding vectors
