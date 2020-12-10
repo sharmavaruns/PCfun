@@ -85,7 +85,8 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
     queries_rez = AutoVivification()
     start = time.time()
     queries_rez_1 = get_model_predterms_mp(queries_rez, queries_vecs, mf_vecs, bp_vecs, cc_vecs, supervised_models, name_type)
-    end = time.time()
+    end = t
+    ime.time()
     print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
 
     n = 5
