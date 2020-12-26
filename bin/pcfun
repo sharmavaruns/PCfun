@@ -22,13 +22,14 @@ from pcfun.get_supervised_predterms import model_predterms
 
 # NOTE: here we should put the main command line script.
 
-def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
-         path_obo:str,is_GeneName = False,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
+def main(input_dat_path:str,req_inputs_path:str,
+         is_GeneName = False,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
     import time
     start_entire = time.time()
     if is_UniProt == True:
         is_GeneName = True
-    embedding_path = embed_path
+    embedding_path = os.path.join(req_inputs_path,'Embeddings/fulltext_model.bin')
+    path_obo = os.path.join(req_inputs_path,'go-basic.obo')
     out_storage_path = os.path.join(os.path.dirname(input_dat_path), 'Stored_Items')
     os.makedirs(out_storage_path,exist_ok=True)
     sup_models_path = os.path.join(req_inputs_path,'New_FullText')
@@ -298,12 +299,9 @@ def main(embed_path:str,input_dat_path:str,req_inputs_path:str,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding', required=True)
-    parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
     parser.add_argument('-r', '--req_inputs_path', type=str, help='path to directory with required dependency files',
-                        required=True)
-    parser.add_argument('-o', '--path_obo', type=str, help='path to Gene Ontology .obo file',
-                        required=True)
+                        default="~/.pcfun/")
+    parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
     parser.add_argument("-u",'--is_UniProt', action='store_true', default=False,
                         help='Flag to indicate if input queries are UniProt ids that are ";" separated per query.'
                         ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
@@ -312,6 +310,11 @@ if __name__ == '__main__':
                         help='Flag to indicate if input queries are GeneNames that are ";" separated per query.'
                         ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
                         )
+
+#    parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding',
+#                        default="~/.pcfun/Embeddings/fulltext_model.bin")
+#    parser.add_argument('-o', '--path_obo', type=str, help='path to Gene Ontology .obo file',
+#                        required=True)
 
     kwargs = vars(parser.parse_args())
     if kwargs['is_UniProt']:
@@ -341,3 +344,6 @@ if __name__ == '__main__':
     ## UniProt mapping command with fulltext_model.bin- 50 dummy queries taken from CORUM UniProt IDs
     # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
     # pcfun -u -e $REL_PWD/req_inputs/Embeddings/fulltext_model.bin -i $REL_PWD/Projects/Test4/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
+
+    # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
+    # pcfun -u -i $REL_PWD/Projects/Test5/input_df.tsv -r $REL_PWD/pcfun

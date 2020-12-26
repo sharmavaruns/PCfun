@@ -21,7 +21,7 @@ import io
 class ftxt_model():
     def __init__(self, path_to_fasttext_embedding: str, req_inputs_path:str):
         self.model = fasttext.load_model(path_to_fasttext_embedding)
-        self.supp_tax_ids = [9606, 3702, 6239]  ## Should make this modular to look up ftp link and extract tax_ids
+        # self.supp_tax_ids = [9606, 3702, 6239]  ## Should make this modular to look up ftp link and extract tax_ids
         self.req_inputs_path = req_inputs_path
         print('Model should be loaded')
 
