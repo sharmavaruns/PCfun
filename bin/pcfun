@@ -298,9 +298,11 @@ def main(input_dat_path:str,req_inputs_path:str,
 
 
 if __name__ == '__main__':
+    import os
+    home_dir = os.path.expanduser("~")
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-r', '--req_inputs_path', type=str, help='path to directory with required dependency files',
-                        default="~/pcfun/")
+                        default=os.path.join(home_dir,"pcfun"))
     parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
     parser.add_argument("-u",'--is_UniProt', action='store_true', default=False,
                         help='Flag to indicate if input queries are UniProt ids that are ";" separated per query.'
