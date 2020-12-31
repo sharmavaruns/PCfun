@@ -312,7 +312,7 @@ if __name__ == '__main__':
                         )
 
 #    parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding',
-#                        default="~/.pcfun/Embeddings/fulltext_model.bin")
+#                        default="~/pcfun/Embeddings/fulltext_model.bin")
 #    parser.add_argument('-o', '--path_obo', type=str, help='path to Gene Ontology .obo file',
 #                        required=True)
 
@@ -347,3 +347,6 @@ if __name__ == '__main__':
 
     # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
     # pcfun -u -i $REL_PWD/Projects/Test5/input_df.tsv -r $REL_PWD/pcfun
+
+    # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
+    # pcfun -u -i $REL_PWD/Projects/Test6/input_df.tsv
