@@ -38,6 +38,8 @@ time python ./download.py
 ***NOTE:*** This will take awhile. For me it took ~1 hour as the zipped file being downloaded from S3 is 9.8 Gb.
 The "time" command is optional, but gives you some idea of how long everything takes.
 
+***This step downloads "pcfun.zip" from my public S3 bucket directly into your home directory (e.g. ~) by default and unzips it there.***
+
 
 ## Example Usage- Project0
 #### 1) First we'll create a new directory for your project where all the results and relevant files will be stored
