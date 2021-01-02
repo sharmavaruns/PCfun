@@ -306,11 +306,13 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input_dat_path', type=str, help='path to input file with queries', required=True)
     parser.add_argument("-u",'--is_UniProt', action='store_true', default=False,
                         help='Flag to indicate if input queries are UniProt ids that are ";" separated per query.'
-                        ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
+                        ' Choosing True will first map UniProt IDs to Gene Names then enforce using the supervised '
+                        'model for UniProt IDs converted to Gene Names.'
                         )
     parser.add_argument("-g",'--is_GeneName', action='store_true', default=False,
                         help='Flag to indicate if input queries are GeneNames that are ";" separated per query.'
-                        ' Choosing True will enforce using the supervised model for UniProt IDs converted to Gene Names'
+                        ' Choosing True will use Gene Names directly (no mapping performed) and then enforce using the '
+                        'supervised model for UniProt IDs converted to Gene Names.'
                         )
 
 #    parser.add_argument('-e', '--embed_path', type=str, nargs='?', help='path to embedding',
@@ -323,12 +325,6 @@ if __name__ == '__main__':
         kwargs['is_GeneName'] = True
     print(kwargs)
     main(**kwargs)
-    #
-    # embedding_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
-    # input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
-    # req_inputs_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs'
-    # path_obo = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/go-basic.obo'
-    # is_UniProt = False  ## should come from command line flag
 
     ##### Run following lines in command line from: /Users/varunsharma/PycharmProjects/PCfun
     ##### Assumes is_UniProt flag is not given, thereby setting it to False in python script
@@ -337,18 +333,5 @@ if __name__ == '__main__':
     # pcfun -g -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test1/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
 
     ## UniProt mapping command
-    # pcfun -u -e $REL_PWD/req_inputs/Embeddings/abstracts_model.bin -i $REL_PWD/Projects/Test3/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
-
-    ##### Currently getting few ML predictions because using Abstract embedding vectors insted of full text
-    ##### embedding vectors with supervised ML models trained on full text embedding vectors
-
-    ##### Run on 09/23/20
-    ## UniProt mapping command with fulltext_model.bin- 50 dummy queries taken from CORUM UniProt IDs
-    # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
-    # pcfun -u -e $REL_PWD/req_inputs/Embeddings/fulltext_model.bin -i $REL_PWD/Projects/Test4/input_df.tsv -r $REL_PWD/req_inputs -o $REL_PWD/req_inputs/go-basic.obo
-
-    # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
-    # pcfun -u -i $REL_PWD/Projects/Test5/input_df.tsv -r $REL_PWD/pcfun
-
     # REL_PWD=/Users/varunsharma/Documents/PCfun_stuff
     # pcfun -u -i $REL_PWD/Projects/Test6/input_df.tsv

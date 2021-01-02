@@ -1,11 +1,5 @@
 #!/usr/bin/env python
 
-### Objective of this script is to read-in .tsv file with columns corresponding to the PC info
-
-###### Assuming that the input is only a single column .tsv file with the input names
-###### Can add is_UniProt to function to first map uniprot ids to gene names if necessary
-###### Will have to implement UniProt ID --> Gene Name script (which is a pain) so deferring that to a little later
-
 import pandas as pd
 import numpy as np
 import fasttext
@@ -21,7 +15,6 @@ import io
 class ftxt_model():
     def __init__(self, path_to_fasttext_embedding: str, req_inputs_path:str):
         self.model = fasttext.load_model(path_to_fasttext_embedding)
-        # self.supp_tax_ids = [9606, 3702, 6239]  ## Should make this modular to look up ftp link and extract tax_ids
         self.req_inputs_path = req_inputs_path
         print('Model should be loaded')
 
@@ -46,6 +39,14 @@ class ftxt_model():
         return(queries_vec_normalized)
 
     def uniprots_to_gnames(self,input_df):
+        '''
+
+        :param input_df: a single column .tsv file with the input UniProt Subunit IDs delimiited by ';'
+        :return: 3 dfs:
+            - input_df --> newly mapped GeneNames delimited by ';' with rows dropped where a subunit maps to 'OBSOLETE' or 'UnmappedUniProtID'
+            - input_df_old --> the original input df with the UniProt Subunit IDs delimited by ';'
+            - dropped_queries --> list of integer indexes corresponding to the rows that were dropped in 'input_df_old'
+        '''
         input_df_split = input_df[0].apply(lambda x: x.split(';'))
         queries_ls = list(input_df_split)
         uni_ids_set = set([subls for ls in queries_ls for subls in ls])
@@ -56,7 +57,7 @@ class ftxt_model():
             'from': 'ACC+ID',
             'to': 'GENENAME',
             'format': 'tab',
-            'query': ' '.join(query_ls)  # 'P40925 P40926 O43175 Q9UM73 P97793'
+            'query': ' '.join(query_ls)  # e.g. 'P40925 P40926 O43175 Q9UM73 P97793'
         }
         data = urllib.parse.urlencode(params)
         data = data.encode('utf-8')
@@ -98,6 +99,7 @@ class ftxt_model():
         assert (len(uni_ids_set - set(df_map_final['From'])) == 0)
 
         repl_ls = [] # list to store replaced queries with UniProt Mapped IDs
+        dropped_queries = []
         for idx,uni_query in enumerate(queries_ls):
             mapped_rez = list(map(uni_gn_dict_final.get, uni_query))
             if 'OBSOLETE' in mapped_rez or 'UnmappedUniProtID' in mapped_rez:
@@ -105,12 +107,13 @@ class ftxt_model():
                     f'query # {idx}: {uni_query} maps to --> {mapped_rez}.\n'
                     f'Since some subunits are mapped to obsolete or are Unmapped, this query will be removed. '
                 )
+                dropped_queries.append(idx)
             else:
                 repl_ls.append(';'.join(mapped_rez))
 
         input_df_old = input_df.copy(deep=True)
         input_df = pd.DataFrame(repl_ls)
-        return(input_df,input_df_old)
+        return(input_df,input_df_old,dropped_queries)
 
     def tsv_to_vecs(self, path_to_tsv: str, is_UniProt=False, write_vecs=True, **kwargs):
         '''
@@ -135,7 +138,7 @@ class ftxt_model():
         print(f'is_UniProt = {is_UniProt}')
         if is_UniProt:
             print('Mapping UniProt IDs in queries to Gene Names.')
-            input_df, input_df_old = self.uniprots_to_gnames(input_df)
+            input_df, input_df_old, dropped_queries = self.uniprots_to_gnames(input_df)
             input_df.to_csv(path_to_tsv,index=False,header=False,sep = '\t')
             path_to_old_input_df = path_to_tsv.split('.')[0]+'_preUniProtmapped.tsv'
             input_df_old.to_csv(path_to_tsv, index=False, header=False, sep='\t')
@@ -150,54 +153,3 @@ class ftxt_model():
                 sep='\t', header=True, index=True
             )
         return (queries_vec_normalized)
-    # def uniprot_to_genename_map(self,taxon_id: int):
-    #     map_uni_gn_pn_spec = []
-    #     with open(os.path.join(uniprot_path, 'uniprot_taxo=9606_human_20191112.fasta'), 'r') as f:
-    #         for i, line in enumerate(f):
-    #             if '>' in line:
-    #                 split_line = line.split('|')
-    #                 uni = split_line[1]
-    #                 try:
-    #                     try:
-    #                         gn = re.search(r'(?<=GN=)(.*?)(?= )', split_line[2]).group()
-    #                     except AttributeError:
-    #                         gn = 'uncharacterized'
-    #                     try:
-    #                         protname = re.search(r'(?<= )(.*?)(?= OS)', split_line[2]).group()
-    #                     except AttributeError:
-    #                         protname = 'uncharacterized'
-    #                     try:
-    #                         species = re.search(r'(?<= OS=)(.*?)(?= OX=)', split_line[2]).group()
-    #                     except AttributeError:
-    #                         species = 'uncharacterized'
-    #                     map_uni_gn_pn_spec.append([i, uni, gn, protname, species])
-    #                 except:
-    #                     print('line {} has something missing\n{}'.format(i, line))
-    #     #             if i > 1000:
-    #     #                 break
-    #     map_uni_gn_pn_spec_df = pd.DataFrame(map_uni_gn_pn_spec,
-    #                                          columns=['idx_in_file', 'Uniprot', 'GeneName', 'ProtName', 'Species'])
-    #     # map_uni_gn_pn_spec_df.to_csv(os.path.join(uniprot_path,'taxo=9606__human__uni_gn_pn_spec'),sep='\t')
-    #     map_uni_gn_pn_spec_df
-
-### Example Usage (Will be moved to main.py script when ready)
-# fasttext_path = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/Embeddings/abstracts_model.bin'
-# input_dat_path = '/Users/varunsharma/Documents/PCfun_stuff/Projects/Test1/input_df.tsv'
-# abstr_model = ftxt_model(path_to_fasttext_embedding=fasttext_path)
-# test_vecs = abstr_model.tsv_to_vecs(path_to_tsv=input_dat_path,write_vecs=True)
-
-# time_start = time.time()
-# path_corum = '/Users/varunsharma/Documents/PCfun_stuff/req_inputs/coreComplexes.txt'
-# # parse file
-# corum_complexes_df = pd.read_csv(
-#     path_corum, sep='\t', index_col=0
-# )
-# corum_complexes_cut = corum_complexes_df[['ComplexName','Organism','subunits(UniProt IDs)','GO ID']]
-# corum_complexes_cut['subunits(UniProt IDs)'] = [str_.split(';') for str_ in corum_complexes_cut['subunits(UniProt IDs)']]
-# corum_complexes_cut = corum_complexes_cut.loc[corum_complexes_cut['subunits(UniProt IDs)'].apply(lambda x: x[0] != 'None')]
-# corum_complexes_cut['subunits(UniProt IDs)'] = corum_complexes_cut['subunits(UniProt IDs)'].apply(lambda x: list(set(x)))
-#
-#
-#
-# time_end = time.time()
-# print(f'Time taken: {(time_end-time_start)/60:0.2f} min')
