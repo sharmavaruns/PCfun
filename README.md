@@ -71,5 +71,5 @@ pcfun -g -i input_df-GeneNames.tsv
 
 #### 3) If input data set includes the entire protein complex name (i.e. no subunits delimited with ';') then use no flag.
 ```
-pcfun -i input_df-FullPCNames.tsv
+pcfun -i input_df-FullComplexNames.tsv
 ```
