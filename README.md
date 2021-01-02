@@ -62,6 +62,7 @@ time pcfun -u -i input_df-UniProtIDs.tsv
 ***NOTE 2:*** 'pcfun -u -i input_df-UniProtIDs.tsv' is an example where the input expects a .tsv file with UniProt Subunit IDs delimited with ';' (hence the '-u' flag).
  See below for other example usage cases (input df consisting of: ComplexNames, UniProtIDs, or GeneNames).
 
+***NOTE 3:*** This took ***~45 minutes for 50 example complexes*** to run on my 2020 MacBook Pro with a Processor: 2 GHz Quad-Core Intel Core i5 & Memory: 16 GB 3733 MHz LPDDR4X
 
 ### Note: I have included three possible use cases when calling the pcfun script based on the input data set
 ### The corresponding data sets used below are in 'PCfun/Toy_Data_Input' directory within cloned PCfun repo for ease of access.
