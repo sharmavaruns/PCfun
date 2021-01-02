@@ -226,7 +226,6 @@ def makehash():
     """
     from collections import defaultdict
     return defaultdict(makehash)
-    # return defaultdict(dict)
 
 
 def map_retrieve(ids2map):
