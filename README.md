@@ -65,17 +65,17 @@ time pcfun -u -i input_df-UniProtIDs.tsv
 
 ### Note: I have included three possible use cases when calling the pcfun script based on the input data set
 ### The corresponding data sets used below are in 'PCfun/Toy_Data_Input' directory within cloned PCfun repo for ease of access.
-#### 1) If input data set includes UniProt IDs for each subunit protein delimited by a ';' for a protein complex use the "-u" flag.
+#### - If input data set includes UniProt IDs for each subunit protein delimited by a ';' for a protein complex use the "-u" flag.
 ```
 pcfun -u -i input_df-UniProtIDs.tsv
 ```
 
-#### 2) If input data set includes the Gene Names (that have already been mapped from UniProt IDs) for each subunit protein delimited by a ';' for a protein complex use only the "-g" flag.
+#### - If input data set includes the Gene Names (that have already been mapped from UniProt IDs) for each subunit protein delimited by a ';' for a protein complex use only the "-g" flag.
 ```
 pcfun -g -i input_df-GeneNames.tsv
 ```
 
-#### 3) If input data set includes the entire protein complex name (i.e. no subunits delimited with ';') then use no flag.
+#### - If input data set includes the entire protein complex name (i.e. no subunits delimited with ';') then use no flag.
 ```
 pcfun -i input_df-FullComplexNames.tsv
 ```
