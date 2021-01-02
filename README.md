@@ -64,6 +64,7 @@ time pcfun -u -i input_df-UniProtIDs.tsv
 
 
 ### Note: I have included three possible use cases when calling the pcfun script based on the input data set
+### The corresponding data sets used below are in 'PCfun/Toy_Data_Input' directory within cloned PCfun repo for ease of access.
 #### 1) If input data set includes UniProt IDs for each subunit protein delimited by a ';' for a protein complex use the "-u" flag.
 ```
 pcfun -u -i input_df-UniProtIDs.tsv
