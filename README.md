@@ -56,9 +56,10 @@ cp ~/Documents/Github/PCfun/Toy_Data_Input/input_df-UniProtIDs.tsv .
 conda activate PCfun
 time pcfun -u -i input_df-UniProtIDs.tsv
 ```
-***NOTE:*** This is now running PCfun on the input data set ("input_df-UniProtIDs.tsv") you've defined.\n
-The "time" command is optional, but gives you some idea of how long everything takes. Though I have some times reported in the pcfun script anyway.
-\\n***NOTE 2:*** 'pcfun -u -i input_df-UniProtIDs.tsv' is an example where the input expects a .tsv file with UniProt Subunit IDs delimited with ';' (hence the '-u' flag).
+***NOTE:*** This is now running PCfun on the input data set ("input_df-UniProtIDs.tsv") you've defined.
+ The "time" command is optional, but gives you some idea of how long everything takes. Though I have some times reported in the pcfun script anyway.
+
+***NOTE 2:*** 'pcfun -u -i input_df-UniProtIDs.tsv' is an example where the input expects a .tsv file with UniProt Subunit IDs delimited with ';' (hence the '-u' flag).
  See below for other example usage cases (input df consisting of: ComplexNames, UniProtIDs, or GeneNames).
 
 
