@@ -121,5 +121,6 @@ ENV/
 # custom folders
 docs_source/_build/
 docs_source/_modules/
+Example/
 
 .idea
