@@ -26,6 +26,9 @@ conda create --name PCfun python=3.7.7
 ```
 conda activate PCfun
 pip install pygraphviz==1.5 --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
+### Note: "--include-path=/usr/include/graphviz" allows graphviz to be installed with pygraphviz
+### This should cause graphviz to be downloaded to "/usr/lib/graphviz/" by default
+### If you have independently installed graphviz, please direct the install command for pygraphviz accordingly
 pip install . #pip install PCfun ## Unsure which works
 ```
 
