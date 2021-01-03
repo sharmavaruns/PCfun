@@ -8,7 +8,8 @@ Fast and accurate tool for the functional annotation of protein complex queries 
 #### 1) After having installed Github Desktop or some flavor of Git so that you can use Git from terminal, ***clone*** the pcfun repo to your place of choice.
 For example in a folder called "Github" (that you manually create or Github Desktop has created for you. Whichever you prefer!) do the following:
 ```
-cd ~/Documents
+mkdir Example
+cd Example
 mkdir Github
 cd Github
 git clone https://github.com/sharmavaruns/PCfun.git
@@ -32,7 +33,7 @@ pip install . #pip install PCfun ## Unsure which works
 #### 4) After installing the dependencies, download the required PCfun data files (word embedding + trained supervised Random Forest classifiers)
 First ensure that your created conda environment where PCfun has been installed into is active then do: 
 ```
-cd ~/Document/Github/PCfun
+cd Example/Github/PCfun
 time python ./download.py
 ```
 ***NOTE:*** This will take awhile. For me it took ~1 hour as the zipped file being downloaded from S3 is 9.8 Gb.
@@ -44,12 +45,12 @@ The "time" command is optional, but gives you some idea of how long everything t
 ## Example Usage- Project0
 #### 1) First we'll create a new directory for your project where all the results and relevant files will be stored
 ```
-cd ~/Documents
+cd Example
 mkdir PCfun_Projects
 cd PCfun_Projects
 mkdir Project0
 cd Project0
-cp ~/Documents/Github/PCfun/Toy_Data_Input/input_df-UniProtIDs.tsv .
+cp Example/Github/PCfun/Toy_Data_Input/input_df-UniProtIDs.tsv .
 ```
 #### 2) Now we'll activate our PCfun conda env and run pcfun on the input data file
 ```
