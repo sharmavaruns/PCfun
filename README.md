@@ -30,7 +30,7 @@ pip install pygraphviz==1.5 --install-option="--include-path=/usr/include/graphv
 ### Note: "--include-path=/usr/include/graphviz" allows graphviz to be installed with pygraphviz
 ### This should cause graphviz to be downloaded to "/usr/lib/graphviz/" by default
 ### If you have independently installed graphviz, please direct the install command for pygraphviz accordingly
-pip install . #pip install PCfun ## Unsure which works
+pip install -e . ## Is it possible to do --> pip install -e PCfun
 ```
 
 #### 4) After installing the dependencies, download the required PCfun data files (word embedding + trained supervised Random Forest classifiers)
