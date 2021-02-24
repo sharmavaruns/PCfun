@@ -91,7 +91,7 @@ pcfun -g -i input_df-GeneNames.tsv
 pcfun -i input_df-FullComplexNames.tsv
 ```
 
-## PCfun will now automatically create the following in your Project directory:
+## OUTPUT: PCfun will now automatically create the following in your Project directory:
 - "query_vecs.tsv": the continuous word embedding vectors for your input queries
 - "Results": Directory with subdirectories named after each query
     - In each subdirectory you will have subdirectories: "BP_GO", "CC_GO", and "MF_GO"
@@ -99,4 +99,8 @@ pcfun -i input_df-FullComplexNames.tsv
     - "funcenrich_list.tsv" corresponds to the Supervised RF's results and indicates if any of the terms were functionally enriched with the nearest neighbors results
     - "KDTree_list.tsv" corresponds to the ranked nearest neighbor results for the query
     - Lastly, an additional subirectory called "Tree_diags" may be created within each "*_GO" directory if any terms were functionally enriched for
-        - If more then 10 terms are functionally enriched for, then only the top 10 functionally enriched GO trees will be plotted 
+        - If more then 10 terms are functionally enriched for, then only the top 10 functionally enriched GO trees will be plotted
+
+
+## I will be working to put up the code used for creating the embeddings, training the supervised models, and generating all of the figures for sake of reproducibility.
+If you have any questions on particular details here, feel free to reach out to me (varunsharma.us@gmail.com) and I'll be happy to answer any questions! 
