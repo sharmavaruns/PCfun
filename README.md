@@ -100,6 +100,37 @@ pcfun -i input_df-FullComplexNames.tsv
     - "KDTree_list.tsv" corresponds to the ranked nearest neighbor results for the query
     - Lastly, an additional subirectory called "Tree_diags" may be created within each "*_GO" directory if any terms were functionally enriched for
         - If more then 10 terms are functionally enriched for, then only the top 10 functionally enriched GO trees will be plotted
+- "Stored_Items": Directory with stored pickle files of that relevant data used to create the results
+    - "ML_predictions.pickle": predictions output from the Supervised RF for each query
+    - "kdtree_rez.pickle": nearest neighbor results for each query
+    - "func_enrich_rez.pickle": results from the hypergeometric test for each query that tested for functional enrichment between the RF and nearest neighbor results
+
+Visual example of structure:
+Before "pcfun -u -i input_df-UniProtIDs.tsv" has been run (Input)
+- Project0
+    - input_df.tsv
+After "pcfun -u -i input_df-UniProtIDs.tsv" has run (Output)
+- Project0
+    - input_df.tsv
+    - query_vecs.tsv
+    - Stored_Items
+        - ML_predictions.pickle
+        - kdtree_rez.pickle
+        - func_enrich_rez.pickle
+    - Results
+        - "actb clic4 ckb tuba1a ywhaz dnm2 ywhae" (example of a query)
+            - BP_GO
+                - funcenrich_list.tsv
+                - KDTree_list.tsv
+                - Tree_diags (Optional- depends on if there were any functionally enriched terms for this query)
+            - CC_GO
+                - funcenrich_list.tsv
+                - KDTree_list.tsv
+                - Tree_diags (Optional)
+            - MF_GO
+                - funcenrich_list.tsv
+                - KDTree_list.tsv
+                - Tree_diags (Optional)
 
 
 ## I will be working to put up the code used for creating the embeddings, training the supervised models, and generating all of the figures for sake of reproducibility.
