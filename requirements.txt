@@ -1,0 +1,19 @@
+Cython==0.29.17
+numba==0.50.1
+boto3==1.9.66
+boto3==1.9.66
+scipy==1.2.0
+matplotlib==3.0.2
+#seaborn==0.9.0
+interact @ git+https://github.com/drugilsberg/interact.git
+pandas==0.23.4
+numpy==1.16.0
+scikit-learn==0.20.2
+networkx==2.2
+fasttext @ git+https://github.com/facebookresearch/fastText
+goatools==1.0.3
+msgpack==1.0.0
+textacy==0.6.2
+### Make sure to pip install pygraphviz with following command separately.
+### pip install pygraphviz==1.5 --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
+### Otherwise the --install-option command makes the requirements.txt file to be run from scratch
