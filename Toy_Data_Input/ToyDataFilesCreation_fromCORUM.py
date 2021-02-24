@@ -1,3 +1,6 @@
+### This script was used to generate the Toy data files
+### If you wish to use this script, you may need to change paths
+
 import pandas as pd
 import os
 from pcfun import mapping as mpng
@@ -31,12 +34,12 @@ df_process_new['GeneNames'] = gn_df[0]
 
 ## Write entire mapping file to Toy_Data_Input folder for people's reference
 #### Has Original 'ComplexName', 'UniProtIDs', and 'GeneNames' mapped per complex
-df_process_new.to_csv('/Users/varunsharma/PycharmProjects/PCfun/Toy_Data_Input/corum_complexes_names_mapped.tsv',sep='\t')
+df_process_new.to_csv(os.path.join(home_dir,'PycharmProjects/PCfun/Toy_Data_Input/corum_complexes_names_mapped.tsv'),sep='\t')
 
 ## Write out top 50 complexes for 'ComplexName', 'UniProtIDs', or 'GeneNames' queries
-df_process_new['ComplexName'].iloc[:50].to_csv('/Users/varunsharma/PycharmProjects/PCfun/Toy_Data_Input/input_df-FullComplexNames.tsv',
+df_process_new['ComplexName'].iloc[:50].to_csv(os.path.join(home_dir,'PycharmProjects/PCfun/Toy_Data_Input/input_df-FullComplexNames.tsv'),
                       sep='\t',header=False,index=False)
-df_process_new['UniProtIDs'].iloc[:50].to_csv('/Users/varunsharma/PycharmProjects/PCfun/Toy_Data_Input/input_df-UniProtIDs.tsv',
+df_process_new['UniProtIDs'].iloc[:50].to_csv(os.path.join(home_dir,'PycharmProjects/PCfun/Toy_Data_Input/input_df-UniProtIDs.tsv'),
                       sep='\t',header=False,index=False)
-df_process_new['GeneNames'].iloc[:50].to_csv('/Users/varunsharma/PycharmProjects/PCfun/Toy_Data_Input/input_df-GeneNames.tsv',
+df_process_new['GeneNames'].iloc[:50].to_csv(os.path.join(home_dir,'PycharmProjects/PCfun/Toy_Data_Input/input_df-GeneNames.tsv'),
                       sep='\t',header=False,index=False)

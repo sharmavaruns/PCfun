@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """PCFun executable scipt."""
 
-# print(f'{__name__}')
-# import sys
-# print(f'{sys.executable}')
 import os
 import pickle
 import warnings
