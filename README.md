@@ -132,6 +132,4 @@ After "pcfun -u -i input_df-UniProtIDs.tsv" has run (Output)
                 - KDTree_list.tsv
                 - Tree_diags (Optional)
 
-
-## I will be working to put up the code used for creating the embeddings, training the supervised models, and generating all of the figures for sake of reproducibility.
-If you have any questions on particular details here, feel free to reach out to me (varunsharma.us@gmail.com) and I'll be happy to answer any questions! 
+## If you have any questions on particular details here, feel free to reach out to me (varunsharma.us@gmail.com) and I'll be happy to answer any questions! 
