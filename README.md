@@ -2,6 +2,7 @@
 
 Fast and accurate tool for the functional annotation of protein complex queries built upon hybrid unsupervised and supervised machine learning on PubMed Central full-text word embeddings.
 
+## If you have any questions on particular details here, feel free to reach out to me (varunsharma.us@gmail.com) and I'll be happy to answer any questions!
 ## Note: Currently PCfun has been tested on Linux and Mac. I'll be working to test it for Windows soon (and perhaps create Docker version if dependencies are incompatible with Windows for some reason.)
 
 ## Installation
@@ -130,6 +131,4 @@ After "pcfun -u -i input_df-UniProtIDs.tsv" has run (Output)
             - MF_GO
                 - funcenrich_list.tsv
                 - KDTree_list.tsv
-                - Tree_diags (Optional)
-
-## If you have any questions on particular details here, feel free to reach out to me (varunsharma.us@gmail.com) and I'll be happy to answer any questions! 
+                - Tree_diags (Optional) 
