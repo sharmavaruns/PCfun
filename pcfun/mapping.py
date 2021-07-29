@@ -47,7 +47,9 @@ class ftxt_model():
             - input_df_old --> the original input df with the UniProt Subunit IDs delimited by ';'
             - dropped_queries --> list of integer indexes corresponding to the rows that were dropped in 'input_df_old'
         '''
-        input_df_split = input_df[0].apply(lambda x: x.split(';'))
+        ## Automaticaly sorts input uniprots by alphabetical order to enforce same vector output
+        ## irrespective of the order of uniprot ids provided
+        input_df_split = input_df[0].apply(lambda x: np.sort(x.split(';')))
         queries_ls = list(input_df_split)
         uni_ids_set = set([subls for ls in queries_ls for subls in ls])
         query_ls = list(uni_ids_set)
