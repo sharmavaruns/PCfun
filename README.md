@@ -33,6 +33,9 @@ pip install pygraphviz==1.5 --install-option="--include-path=/usr/include/graphv
 ### This should cause graphviz to be downloaded to "/usr/lib/graphviz/" by default
 ### If you have independently installed graphviz, please direct the install command for pygraphviz accordingly
 
+### NOTE: In case you are having trouble installing graphviz with the above commands you might need to install graphviz via brew:
+brew install graphviz
+
 ### Now install PCfun and the rest of its dependencies with the following
 ### Note: ensure that you're current directory is in the "PCfun" directory that you've cloned
 pip install .
