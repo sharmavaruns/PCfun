@@ -17,7 +17,7 @@ from pcfun.kdtree_nns import query_tree_get_mqueries_nns
 from pcfun.get_supervised_predterms import model_predterms
 
 def main(input_dat_path:str,req_inputs_path:str,
-         is_GeneName = False,is_UniProt = False):  ## ,n_clusts = 25): ## because scrapped Functional Enrichment Clust
+         is_GeneName = False,is_UniProt = False):
     import time
     start_entire = time.time()
     if is_UniProt == True:
@@ -43,7 +43,6 @@ def main(input_dat_path:str,req_inputs_path:str,
     go_map_dict = {go_map['GO'].iloc[i]: go_map['GO ID'].iloc[i] for i in range(go_map.shape[0])}
 
     ### Make GO vectors
-    ## should implement choice to read-in GO vectors from file perhaps, though this doesn't take too long
     mf_terms = pd.DataFrame([(go_id, preprocess(go_dag[go_id].name)) for go_id in go_dag.keys()
                              if go_dag[go_id].namespace == 'molecular_function'], columns=['GO ID', 'GO'])
     mf_vecs = embed_model.queries_df_to_vecs(list(mf_terms['GO'])).drop_duplicates()
@@ -76,7 +75,7 @@ def main(input_dat_path:str,req_inputs_path:str,
 
                 supervised_models[go_class][dat_n][model_type] = model
 
-    ## Get functional predictions for test protein complexes (due to time of running algorithm)
+    ## Get functional predictions for protein complexes using supervised model
     start = time.time()
     n = 5
     queries_rez = AutoVivification()
@@ -109,7 +108,6 @@ def main(input_dat_path:str,req_inputs_path:str,
     end = time.time()
     print("Time taken for getting supervised RF models' predicted terms: {} min".format(round((end - start) / 60), 3))
 
-    ##### To-Do- include QuickGO CC results into list potentially #####
 
     ############################################################################################################
     ############################################################################################################
@@ -138,7 +136,6 @@ def main(input_dat_path:str,req_inputs_path:str,
             trees_dict[tree_name] = tree
     trees_oi = []
     for i, pc in enumerate(list(queries_vecs.index)):
-        # trees_oi.append(['MF_GO', 'BP_GO', 'CC_GO', 'Disease', 'Pathway','PC'])
         trees_oi.append(['MF_GO', 'BP_GO', 'CC_GO'])
 
     start = time.time()
@@ -238,7 +235,7 @@ def main(input_dat_path:str,req_inputs_path:str,
                             diagram, diagram_colors = go_dag_functionalities.go_graph_topchildren(
                                 go_dag, go_id_parent, testing_go_recs,
                                 mapped_success_top10=mapped_succ_top10,
-                                nodecolor="blue", edgecolor="lightslateblue", dpi=200, ## Make sure to change as input arg
+                                nodecolor="blue", edgecolor="lightslateblue", dpi=200,
                                 draw_parents=True, draw_children=False
                             )
                             diagram.draw(lineage_png_test, prog='dot')
