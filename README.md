@@ -94,7 +94,7 @@ pcfun -g -i input_df-GeneNames.tsv
 ```
 pcfun -i input_df-FullComplexNames.tsv
 ```
-***NOTE 4:*** For prediction mode in PCfun, protein subunits are dynamically queried to UniProt and mapped to their respective gene names. Subsequently, each list of subunit gene names are sorted alphabetically per protein complex and concatenated into a final natural language string of the protein complex query for sentence vector generation to restrict any ordering effect on the output sentence vector generated per protein complex.
+***NOTE 5:*** For prediction mode in PCfun, protein subunits are dynamically queried to UniProt and mapped to their respective gene names. Subsequently, each list of subunit gene names are sorted alphabetically per protein complex and concatenated into a final natural language string of the protein complex query for sentence vector generation to restrict any ordering effect on the output sentence vector generated per protein complex.
 
 ## OUTPUT: PCfun will now automatically create the following in your Project directory:
 - "query_vecs.tsv": the continuous word embedding vectors for your input queries
